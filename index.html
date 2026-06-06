@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>EventMedia — Dashboard</title>
@@ -9,8 +8,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-
-
 </head>
 <body>
 
@@ -65,13 +62,11 @@
     <div class="user-info">
       <div class="user-name" id="user-name">Komal Sharma</div>
       <div class="user-role" id="user-role">Photographer</div>
-      
     </div>
-    <button class="logout-btn" onclick="logoutUser()">
-  <i class="fa-solid fa-right-from-bracket"></i>
-  Logout
-</button>
   </div>
+  <button class="logout-btn" onclick="logoutUser()">
+    <i class="fa-solid fa-right-from-bracket"></i> Logout
+  </button>
 </aside>
 
 <!-- ── MAIN ── -->
@@ -99,7 +94,6 @@
 
     <!-- ══ DASHBOARD PAGE ══ -->
     <div class="page active" id="page-dashboard">
-      <!-- Stats -->
       <div class="stats-row">
         <div class="stat-card">
           <div class="stat-label">Total Events</div>
@@ -123,7 +117,6 @@
         </div>
       </div>
 
-      <!-- Recent Events -->
       <div class="sec-hd">
         <h2>Recent Events</h2>
         <div class="sec-count" id="events-count-badge">0 total</div>
@@ -236,22 +229,10 @@
     <div class="page" id="page-analytics">
       <div class="sec-hd" style="margin-bottom:20px"><h2>Analytics</h2></div>
       <div class="analytics-grid">
-        <div class="analytics-card">
-          <h3>Media by Category</h3>
-          <div id="cat-bars"></div>
-        </div>
-        <div class="analytics-card">
-          <h3>Activity Timeline</h3>
-          <div id="timeline-bars"></div>
-        </div>
-        <div class="analytics-card">
-          <h3>Top Events by Photos</h3>
-          <div id="top-events-bars"></div>
-        </div>
-        <div class="analytics-card">
-          <h3>Engagement Stats</h3>
-          <div id="engagement-bars"></div>
-        </div>
+        <div class="analytics-card"><h3>Media by Category</h3><div id="cat-bars"></div></div>
+        <div class="analytics-card"><h3>Activity Timeline</h3><div id="timeline-bars"></div></div>
+        <div class="analytics-card"><h3>Top Events by Photos</h3><div id="top-events-bars"></div></div>
+        <div class="analytics-card"><h3>Engagement Stats</h3><div id="engagement-bars"></div></div>
       </div>
     </div>
 
@@ -322,6 +303,45 @@
   </div>
 </div>
 
+<!-- ══════════════════════════════════════════════════════════════
+     COMMENT MODAL  ← NEW: Instagram-style split panel
+══════════════════════════════════════════════════════════════ -->
+<div class="comment-modal-overlay" id="comment-modal-overlay">
+  <div class="comment-modal-box">
+
+    <!-- Left: photo preview -->
+    <div class="comment-modal-left">
+      <img id="comment-modal-photo" src="" alt="photo"
+           onerror="this.src='https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800'">
+    </div>
+
+    <!-- Right: comment panel -->
+    <div class="comment-modal-right">
+      <div class="comment-modal-header">
+        <span><i class="fa-regular fa-comment" style="margin-right:6px;color:var(--blue)"></i>Comments</span>
+        <button class="comment-modal-close" onclick="closeCommentModal()" title="Close">✕</button>
+      </div>
+
+      <!-- Comment list -->
+      <div class="comment-list" id="comment-list">
+        <div class="comment-empty">
+          <i class="fa-regular fa-comment-dots"></i>
+          No comments yet. Be the first!
+        </div>
+      </div>
+
+      <!-- Input row -->
+      <div class="comment-input-row">
+        <input type="text" id="comment-input"
+               placeholder="Add a comment..."
+               onkeydown="if(event.key==='Enter') postComment()">
+        <button class="comment-post-btn" onclick="postComment()">Post</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 <!-- ── TOAST ── -->
 <div id="toast"></div>
 
@@ -332,11 +352,13 @@ const API = 'https://event-and-media-management-paltform1.onrender.com/api';
    STATE
 ════════════════════════════════ */
 let notifications = JSON.parse(localStorage.getItem('fv_notifications') || '[]');
-let favorites     = JSON.parse(localStorage.getItem('fv_favorites') || '[]');
-let likes         = JSON.parse(localStorage.getItem('fv_likes') || '[]');
+let favorites     = JSON.parse(localStorage.getItem('fv_favorites')     || '[]');
+let likes         = JSON.parse(localStorage.getItem('fv_likes')         || '[]');
 let allEvents     = [];
 let allMedia      = [];
 let currentPage   = 'dashboard';
+let currentMediaId = null;   // for comment modal
+let currentUserId  = null;   // logged-in user id
 
 /* ════════════════════════════════
    NAVIGATION
@@ -378,8 +400,7 @@ function showToast(msg, type='success'){
 }
 
 /* ════════════════════════════════
-   NOTIFICATIONS (localStorage persistent)
-   To connect to MongoDB, see backend fix at bottom
+   NOTIFICATIONS
 ════════════════════════════════ */
 function saveNotifications(){ localStorage.setItem('fv_notifications', JSON.stringify(notifications)); }
 
@@ -401,42 +422,31 @@ function renderNotifBadge(){
 
 function renderNotifPanel(){
   const list=document.getElementById('notif-list');
-  if(!notifications.length){
-    list.innerHTML='<div class="notif-empty">No notifications yet</div>'; return;
-  }
+  if(!notifications.length){ list.innerHTML='<div class="notif-empty">No notifications yet</div>'; return; }
   list.innerHTML=notifications.map(n=>`
     <div class="notif-item">
       <span class="notif-dot" style="${n.read?'background:var(--txt3)':''}"></span>
       <span>${n.msg}</span>
       <span class="notif-time">${timeAgo(n.time)}</span>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
 function renderNotifPage(){
   const el=document.getElementById('notif-page-list');
-  if(!notifications.length){
-    el.innerHTML='<div style="text-align:center;color:var(--txt3);padding:40px">No notifications yet</div>'; return;
-  }
-  // Mark all as read
+  if(!notifications.length){ el.innerHTML='<div style="text-align:center;color:var(--txt3);padding:40px">No notifications yet</div>'; return; }
   notifications.forEach(n=>n.read=true);
   saveNotifications(); renderNotifBadge();
   el.innerHTML=notifications.map(n=>`
     <div class="search-result-item" style="cursor:default">
-      <div style="width:36px;height:36px;background:var(--bg4);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px">
-        🔔
-      </div>
+      <div style="width:36px;height:36px;background:var(--bg4);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px">🔔</div>
       <div class="search-result-info">
         <h4>${n.msg}</h4>
         <p>${new Date(n.time).toLocaleString('en-IN')}</p>
       </div>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
-function clearAllNotifications(){
-  notifications=[];saveNotifications();renderNotifBadge();renderNotifPage();
-}
+function clearAllNotifications(){ notifications=[]; saveNotifications(); renderNotifBadge(); renderNotifPage(); }
 
 function toggleNotifPanel(){
   const p=document.getElementById('notif-panel');
@@ -453,7 +463,7 @@ document.addEventListener('click',e=>{
 });
 
 function timeAgo(iso){
-  const d=new Date(iso),now=new Date(),diff=now-d;
+  const diff=new Date()-new Date(iso);
   if(diff<60000) return 'just now';
   if(diff<3600000) return Math.floor(diff/60000)+'m ago';
   if(diff<86400000) return Math.floor(diff/3600000)+'h ago';
@@ -461,7 +471,7 @@ function timeAgo(iso){
 }
 
 /* ════════════════════════════════
-   FAVORITES (localStorage persistent)
+   FAVORITES & LIKES
 ════════════════════════════════ */
 function saveFavorites(){ localStorage.setItem('fv_favorites', JSON.stringify(favorites)); }
 function isFavorited(id){ return favorites.includes(String(id)); }
@@ -469,19 +479,194 @@ function toggleFavorite(id){
   id=String(id);
   if(favorites.includes(id)) favorites=favorites.filter(f=>f!==id);
   else favorites.push(id);
-  saveFavorites();
-  return favorites.includes(id);
+  saveFavorites(); return favorites.includes(id);
 }
-
-/* LIKES (localStorage persistent) */
 function saveLikes(){ localStorage.setItem('fv_likes', JSON.stringify(likes)); }
 function isLiked(id){ return likes.includes(String(id)); }
 
 /* ════════════════════════════════
-   LOAD EVENTS
+   COMMENT SYSTEM
+   — API se load karo, fail hone par localStorage se
+   — Post hone par turant screen pe dikhao
+════════════════════════════════ */
+
+/* localStorage mein comments store karte hain per-mediaId */
+function getLocalComments(mediaId){
+  try{ return JSON.parse(localStorage.getItem('cmts_'+mediaId)||'[]'); }
+  catch{ return []; }
+}
+function saveLocalComments(mediaId, arr){
+  try{ localStorage.setItem('cmts_'+mediaId, JSON.stringify(arr)); } catch{}
+}
+
+function openCommentModal(mediaId, imgUrl){
+  currentMediaId = mediaId;
+  const overlay = document.getElementById('comment-modal-overlay');
+  const photo   = document.getElementById('comment-modal-photo');
+  photo.src = imgUrl;
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  loadComments(mediaId);
+}
+
+function closeCommentModal(){
+  document.getElementById('comment-modal-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+  currentMediaId = null;
+}
+
+document.getElementById('comment-modal-overlay').addEventListener('click', function(e){
+  if(e.target === this) closeCommentModal();
+});
+
+/* ── renderCommentList: array se DOM banao ── */
+function renderCommentList(comments){
+  const list = document.getElementById('comment-list');
+  if(!comments.length){
+    list.innerHTML = `<div class="comment-empty">
+      <i class="fa-regular fa-comment-dots"></i>
+      No comments yet. Be the first!
+    </div>`;
+    return;
+  }
+  list.innerHTML = comments.map(c => commentHTML(c)).join('');
+  list.scrollTop = list.scrollHeight;
+}
+
+/* ── loadComments: API try karo, warna localStorage ── */
+async function loadComments(mediaId){
+  const list = document.getElementById('comment-list');
+  list.innerHTML = '<div class="comment-empty"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</div>';
+
+  try{
+    const res  = await fetch(`${API}/social/comments/${mediaId}`);
+    if(!res.ok) throw new Error('api fail');
+    const data = await res.json();
+    const serverComments = data.comments || [];
+    /* Merge: server comments + local-only ones (jo API pe nahi hain) */
+    const localOnly = getLocalComments(mediaId).filter(lc=>lc._localOnly);
+    const merged = [...serverComments, ...localOnly];
+    /* Update localStorage with merged */
+    saveLocalComments(mediaId, merged);
+    renderCommentList(merged);
+  } catch {
+    /* API nahi chali — sirf localStorage se dikhao */
+    const local = getLocalComments(mediaId);
+    renderCommentList(local);
+  }
+}
+
+function commentHTML(c){
+  const initials = (c.user?.name || 'U').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  const myId = currentUserId || 'me';
+  const isOwner = String(c.user?._id) === String(myId) || c._localOwner === true;
+  const colors = ['#7c3aed','#059669','#1e40af','#b45309','#9d174d','#0e7490'];
+  const color  = colors[(initials.charCodeAt(0)||0) % colors.length];
+
+  return `
+    <div class="comment-item" id="cmt-${c._id}">
+      <div class="comment-avatar" style="background:${color}">${initials}</div>
+      <div class="comment-body">
+        <div class="comment-name">${escHtml(c.user?.name || 'User')}</div>
+        <div class="comment-text">${escHtml(c.text)}</div>
+        <div class="comment-time">${timeAgo(c.createdAt)}</div>
+      </div>
+      ${isOwner ? `<button class="comment-delete" onclick="deleteComment('${currentMediaId}','${c._id}')" title="Delete">
+        <i class="fa-solid fa-trash-can"></i>
+      </button>` : ''}
+    </div>`;
+}
+
+function escHtml(str){
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ── postComment: API try karo, turant local mein bhi dikhao ── */
+async function postComment(){
+  const input = document.getElementById('comment-input');
+  const text  = input.value.trim();
+  if(!text){ showToast('Comment likhna zaroori hai','error'); return; }
+
+  const btn = document.querySelector('.comment-post-btn');
+  btn.disabled = true; btn.textContent = '...';
+
+  const userName = document.getElementById('user-name').textContent || 'You';
+  const userId   = currentUserId || 'me';
+  const newId    = 'local-' + Date.now();
+  const newComment = {
+    _id: newId,
+    user: { _id: userId, name: userName },
+    text,
+    createdAt: new Date().toISOString(),
+    _localOnly: true,
+    _localOwner: true
+  };
+
+  /* Step 1: Turant screen pe dikhao */
+  input.value = '';
+  const existingLocal = getLocalComments(currentMediaId);
+  const updated = [...existingLocal, newComment];
+  saveLocalComments(currentMediaId, updated);
+  renderCommentList(updated);
+
+  /* Step 2: API pe bhi bhejne ki koshish */
+  const token = localStorage.getItem('token');
+  try{
+    if(token){
+      const res = await fetch(`${API}/social/comment/${currentMediaId}`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`},
+        body: JSON.stringify({text})
+      });
+      if(res.ok){
+        /* Server ne accept kiya — local flag hata do, server se reload karo */
+        await loadComments(currentMediaId);
+      }
+    }
+  } catch { /* Comment already screen pe dikh raha hai — koi problem nahi */ }
+
+  btn.disabled = false; btn.textContent = 'Post';
+  addNotification('💬 Comment posted on a photo!');
+  showToast('Comment posted!');
+}
+
+/* ── deleteComment ── */
+async function deleteComment(mediaId, commentId){
+  if(!confirm('Is comment ko delete karein?')) return;
+
+  /* Pehle DOM se hatao */
+  const el = document.getElementById(`cmt-${commentId}`);
+  if(el) el.remove();
+
+  /* localStorage se bhi hatao */
+  const updated = getLocalComments(mediaId).filter(c=>c._id!==commentId);
+  saveLocalComments(mediaId, updated);
+
+  /* Empty state check */
+  const list = document.getElementById('comment-list');
+  if(!list.querySelector('.comment-item')){
+    list.innerHTML = `<div class="comment-empty">
+      <i class="fa-regular fa-comment-dots"></i> No comments yet.</div>`;
+  }
+
+  /* API pe bhi try karo */
+  const token = localStorage.getItem('token');
+  try{
+    if(token && !commentId.startsWith('local-')){
+      await fetch(`${API}/social/comment/${mediaId}/${commentId}`,{
+        method:'DELETE', headers:{Authorization:`Bearer ${token}`}
+      });
+    }
+  } catch{}
+
+  showToast('Comment delete ho gaya');
+}
+
+/* ════════════════════════════════
+   EVENTS
 ════════════════════════════════ */
 const CAT_EMOJIS={cultural_fest:'🎭',competition:'💻',trip:'🏔️',sports:'🏆',party:'🎉',workshop:'📷',photoshoot:'📸',other:'📁'};
-const CAT_CSS={cultural_fest:'cat-cultural',competition:'cat-competition',trip:'cat-trip',sports:'cat-sports',party:'cat-party',workshop:'cat-workshop',photoshoot:'cat-photoshoot',other:'cat-other'};
+const CAT_CSS   ={cultural_fest:'cat-cultural',competition:'cat-competition',trip:'cat-trip',sports:'cat-sports',party:'cat-party',workshop:'cat-workshop',photoshoot:'cat-photoshoot',other:'cat-other'};
 
 function eventCardHTML(e){
   const emoji=CAT_EMOJIS[e.category]||'📁';
@@ -489,8 +674,6 @@ function eventCardHTML(e){
   const d=new Date(e.date);
   const dateStr=d.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
   const isUpcoming=d>new Date();
-  const statusClass=isUpcoming?'status-upcoming':'status-completed';
-  const statusTxt=isUpcoming?'upcoming':'completed';
   const colors=['#7c3aed','#059669','#1e40af','#b45309','#9d174d','#374151'];
   const memberDots=[0,1,2].map(i=>`<div class="member-dot" style="background:${colors[i%colors.length]}">${String.fromCharCode(65+i)}</div>`).join('');
   return `
@@ -505,12 +688,10 @@ function eventCardHTML(e){
         <div class="event-meta-row">
           <i class="fa-solid fa-calendar-days"></i>
           ${dateStr}
-          <span class="event-status ${statusClass}">${statusTxt}</span>
+          <span class="event-status ${isUpcoming?'status-upcoming':'status-completed'}">${isUpcoming?'Upcoming':'Completed'}</span>
         </div>
         <div class="event-footer-row">
-          <div class="event-photos">
-            <i class="fa-solid fa-camera"></i> ${e.mediaCount||0} photos
-          </div>
+          <div class="event-photos"><i class="fa-solid fa-camera"></i> ${e.mediaCount||0} photos</div>
           <div class="event-members">${memberDots}</div>
         </div>
       </div>
@@ -526,15 +707,11 @@ async function loadDashboardEvents(){
     document.getElementById('events-count-badge').textContent=allEvents.length+' total';
     document.getElementById('stat-events-sub').textContent=`${Math.min(2,allEvents.length)} this month`;
     const grid=document.getElementById('dashboard-events-grid');
-    if(!allEvents.length){grid.innerHTML='<p style="color:var(--txt3);grid-column:1/-1;padding:40px;text-align:center">No events yet. Create your first event!</p>';return;}
+    if(!allEvents.length){ grid.innerHTML='<p style="color:var(--txt3);grid-column:1/-1;padding:40px;text-align:center">No events yet. Create your first event!</p>'; return; }
     grid.innerHTML=allEvents.slice(0,6).map(eventCardHTML).join('');
-    // Load media stats
     loadMediaStats(allEvents);
-  }catch{
-    document.getElementById('dashboard-events-grid').innerHTML=`
-      <p style="color:var(--txt3);font-size:13px;grid-column:1/-1;padding:20px;text-align:center">
-        ⚠️ Cannot connect to backend. Showing demo data.
-      </p>`;
+  } catch {
+    document.getElementById('dashboard-events-grid').innerHTML=`<p style="color:var(--txt3);font-size:13px;grid-column:1/-1;padding:20px;text-align:center">⚠️ Cannot connect to backend. Showing demo data.</p>`;
     loadDemoData();
   }
 }
@@ -564,32 +741,25 @@ function loadDemoData(){
 
 function generateDemoMedia(){
   return[
-    {_id:'m1',url:'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=400',aiTags:['crowd','stage','lights'],likes:24,eventName:'Annual Cultural Fest',uploadedBy:{name:'Komal S'}},
-    {_id:'m2',url:'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400',aiTags:['workshop','camera','indoor'],likes:18,eventName:'Photography Workshop',uploadedBy:{name:'Rahul M'}},
-    {_id:'m3',url:'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=400',aiTags:['party','celebration','dance'],likes:42,eventName:'Freshers Party',uploadedBy:{name:'Priya K'}},
-    {_id:'m4',url:'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=400',aiTags:['sports','action','outdoor'],likes:31,eventName:'Sports Day',uploadedBy:{name:'Arjun S'}},
-    {_id:'m5',url:'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=400',aiTags:['nature','mountains','trip'],likes:55,eventName:'Winter Trip',uploadedBy:{name:'Komal S'}},
-    {_id:'m6',url:'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=400',aiTags:['people','group','smiling'],likes:28,eventName:'Cultural Fest',uploadedBy:{name:'Meera J'}},
+    {_id:'m1',url:'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=400',aiTags:['crowd','stage','lights'],likes:[],eventName:'Annual Cultural Fest',uploadedBy:{name:'Komal S'}},
+    {_id:'m2',url:'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400',aiTags:['workshop','camera','indoor'],likes:[],eventName:'Photography Workshop',uploadedBy:{name:'Rahul M'}},
+    {_id:'m3',url:'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=400',aiTags:['party','celebration','dance'],likes:[],eventName:'Freshers Party',uploadedBy:{name:'Priya K'}},
+    {_id:'m4',url:'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=400',aiTags:['sports','action','outdoor'],likes:[],eventName:'Sports Day',uploadedBy:{name:'Arjun S'}},
+    {_id:'m5',url:'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=400',aiTags:['nature','mountains','trip'],likes:[],eventName:'Winter Trip',uploadedBy:{name:'Komal S'}},
+    {_id:'m6',url:'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=400',aiTags:['people','group','smiling'],likes:[],eventName:'Cultural Fest',uploadedBy:{name:'Meera J'}},
   ];
 }
 
 async function loadMediaStats(events){
-  let totalMedia=0,totalLikes=0;
+  let totalMedia=0, totalLikes=0;
   for(const e of events.slice(0,3)){
     try{
       const res=await fetch(`${API}/media/event/${e._id}`);
       const data=await res.json();
-      if(data.media){
-        totalMedia+=data.media.length;
-        totalLikes+=data.media.reduce((s,m)=>s+(m.likes?.length||0),0);
-        allMedia=[...allMedia,...data.media.map(m=>({...m,eventName:e.name}))];
-      }
-    }catch{}
+      if(data.media){ totalMedia+=data.media.length; totalLikes+=data.media.reduce((s,m)=>s+(m.likes?.length||0),0); allMedia=[...allMedia,...data.media.map(m=>({...m,eventName:e.name}))]; }
+    } catch{}
   }
-  if(totalMedia>0){
-    document.getElementById('stat-media').textContent=totalMedia;
-    document.getElementById('stat-likes').textContent=totalLikes;
-  }
+  if(totalMedia>0){ document.getElementById('stat-media').textContent=totalMedia; document.getElementById('stat-likes').textContent=totalLikes; }
 }
 
 /* ════════════════════════════════
@@ -597,19 +767,15 @@ async function loadMediaStats(events){
 ════════════════════════════════ */
 async function loadAllEvents(){
   document.getElementById('all-events-grid').innerHTML='<div style="text-align:center;color:var(--txt3);grid-column:1/-1;padding:40px">Loading...</div>';
-  try{
-    const res=await fetch(`${API}/events`);
-    const data=await res.json();
-    allEvents=data.events||[];
-  }catch{}
+  try{ const res=await fetch(`${API}/events`); const data=await res.json(); allEvents=data.events||[]; } catch{}
   const grid=document.getElementById('all-events-grid');
   document.getElementById('all-events-count').textContent=allEvents.length+' total';
-  if(!allEvents.length){grid.innerHTML='<p style="color:var(--txt3);grid-column:1/-1;padding:40px;text-align:center">No events yet</p>';return;}
+  if(!allEvents.length){ grid.innerHTML='<p style="color:var(--txt3);grid-column:1/-1;padding:40px;text-align:center">No events yet</p>'; return; }
   grid.innerHTML=allEvents.map(eventCardHTML).join('');
 }
 
 /* ════════════════════════════════
-   OPEN EVENT DETAIL
+   EVENT DETAIL
 ════════════════════════════════ */
 function openEventDetail(id){
   const ev=allEvents.find(e=>e._id===id);
@@ -635,7 +801,7 @@ async function loadEventDetail(ev){
           <span class="chip"><i class="fa-solid fa-${ev.isPublic?'globe':'lock'}"></i> ${ev.isPublic?'Public':'Private'}</span>
           <span class="chip"><i class="fa-solid fa-images"></i> ${ev.mediaCount||0} photos</span>
         </div>
-        <p class="event-detail-desc">${ev.description||'No description available for this event.'}</p>
+        <p class="event-detail-desc">${ev.description||'No description available.'}</p>
       </div>
     </div>
     <div class="sec-hd"><h2>Event Photos</h2><div class="sec-count" id="detail-media-count">Loading...</div></div>
@@ -644,205 +810,79 @@ async function loadEventDetail(ev){
         <i class="fa-solid fa-spinner fa-spin" style="font-size:20px"></i> Loading photos...
       </div>
     </div>`;
-  // Load media for this event
+
   try{
     const res=await fetch(`${API}/media/event/${ev._id}`);
     const data=await res.json();
     const media=data.media||[];
     document.getElementById('detail-media-count').textContent=media.length+' photos';
-    if(!media.length){
-      document.getElementById('detail-media-grid').innerHTML='<p style="color:var(--txt3);grid-column:1/-1;padding:30px;text-align:center">No photos yet for this event</p>';
-      return;
-    }
+    if(!media.length){ document.getElementById('detail-media-grid').innerHTML='<p style="color:var(--txt3);grid-column:1/-1;padding:30px;text-align:center">No photos yet for this event</p>'; return; }
     document.getElementById('detail-media-grid').innerHTML=media.map(m=>mediaItemHTML(m)).join('');
     attachMediaEvents();
-  }catch{
-    // Demo media
+  } catch {
     const demoMedia=generateDemoMedia().slice(0,4).map(m=>({...m,eventName:ev.name}));
     document.getElementById('detail-media-count').textContent=demoMedia.length+' photos (demo)';
     document.getElementById('detail-media-grid').innerHTML=demoMedia.map(m=>mediaItemHTML(m)).join('');
     attachMediaEvents();
   }
 }
+
+/* ════════════════════════════════
+   MEDIA ITEM HTML
+════════════════════════════════ */
 function mediaItemHTML(m){
-  const rawUrl = m.url || m.fileUrl || "";
-  const fixedUrl = rawUrl.replaceAll("\\", "/");
-  const imgUrl = fixedUrl.startsWith("http")
-    ? fixedUrl
-    : `https://event-and-media-management-paltform1.onrender.com/${fixedUrl.replace(/^\/+/, "")}`;
-
-  const faved = isFavorited(m._id);
-  const liked = isLiked(m._id);
-
-  const tags = (m.aiTags || [])
-    .slice(0, 4)
-    .map(t => `<span class="tag-chip">#${t}</span>`)
-    .join("");
+  const rawUrl = m.url || m.fileUrl || '';
+  const fixedUrl = rawUrl.replaceAll('\\','/');
+  const imgUrl = fixedUrl.startsWith('http') ? fixedUrl : `https://event-and-media-management-paltform1.onrender.com/${fixedUrl.replace(/^\/+/,'')}`;
+  const faved  = isFavorited(m._id);
+  const liked  = isLiked(m._id);
+  const tags   = (m.aiTags||[]).slice(0,4).map(t=>`<span class="tag-chip">#${t}</span>`).join('');
+  const commentCount = m.comments?.length || 0;
 
   return `
   <div class="media-item" data-id="${m._id}">
     <img src="${imgUrl}" alt="photo"
       onerror="this.src='https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=400'">
-
     <div class="media-item-actions">
-
-      <button class="like-btn-small ${liked ? 'liked' : ''}" data-id="${m._id}">
-        ❤️ <span class="like-count">${m.likes?.length || 0}</span>
+      <button class="like-btn-small ${liked?'liked':''}" data-id="${m._id}">
+        ❤️ <span class="like-count">${m.likes?.length||0}</span>
       </button>
-
-      <button class="download-btn-small" data-url="${imgUrl}">
-        ⬇️
+      <button class="fav-btn-small ${faved?'favorited':''}" data-id="${m._id}" title="Favourite">
+        <i class="fa-${faved?'solid':'regular'} fa-star"></i>
       </button>
-
-      <button class="fav-btn-small ${faved ? 'favorited' : ''}" data-id="${m._id}" title="Favorite">
-        ⭐
+      <button class="comment-btn-small" data-id="${m._id}" data-url="${imgUrl}" title="Comments">
+        <span class="comment-emoji">💬</span>
+        <span class="cmt-count">${commentCount}</span>
       </button>
-
-      <button class="share-btn-small" data-url="${imgUrl}">
-        🔗
-      </button>
-
-      <button class="comment-btn-small" onclick="openCommentModal('${m._id}','${imgUrl}')">
-        💬 <span style="font-size:11px">${m.comments?.length || 0}</span>
-      </button>
-
+      <button class="download-btn-small" data-url="${imgUrl}" title="Download">⬇️</button>
+      <button class="share-btn-small" data-url="${imgUrl}" title="Copy link">🔗</button>
     </div>
-
-    ${tags ? `<div class="ai-tags-mini">${tags}</div>` : ""}
+    ${tags?`<div class="ai-tags-mini">${tags}</div>`:''}
   </div>`;
 }
+
 /* ════════════════════════════════
-   COMMENTS
+   ATTACH MEDIA EVENTS
 ════════════════════════════════ */
-let currentMediaId = null;
-
-function openCommentModal(mediaId, imgUrl) {
-  currentMediaId = mediaId;
-
-  const modal = document.getElementById('comment-modal');
-  const photo = document.getElementById('comment-photo');
-
-  if (!modal || !photo) {
-    console.error('Comment modal HTML is missing');
-    return;
-  }
-
-  photo.src = imgUrl;
-  modal.classList.add('open');
-  loadComments(mediaId);
-}
-
-function closeCommentModal() {
-  const modal = document.getElementById('comment-modal');
-  if (modal) modal.classList.remove('open');
-  currentMediaId = null;
-}
-
-async function loadComments(mediaId) {
-  const list = document.getElementById('comment-list');
-  list.innerHTML = '<div style="text-align:center;color:var(--txt3);padding:20px">Loading...</div>';
-  try {
-    const res = await fetch(`${API}/social/comments/${mediaId}`);
-    const data = await res.json();
-    const comments = data.comments || [];
-    if (!comments.length) {
-      list.innerHTML = '<div style="text-align:center;color:var(--txt3);padding:20px">No comments yet. Be the first!</div>';
-      return;
-    }
-    const token = localStorage.getItem('token');
-    let myId = null;
-    if (token) {
-      try {
-        const me = await fetch(`${API}/auth/me`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json());
-        myId = me._id;
-      } catch {}
-    }
-    list.innerHTML = comments.map(c => {
-      const initials = (c.user?.name || 'U').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-      const isOwner = myId && String(c.user?._id) === String(myId);
-      return `
-        <div class="comment-item" id="comment-${c._id}">
-          <div class="comment-avatar">${initials}</div>
-          <div class="comment-body">
-            <div class="comment-name">${c.user?.name || 'User'}</div>
-            <div class="comment-text">${c.text}</div>
-            <div class="comment-time">${timeAgo(c.createdAt)}</div>
-          </div>
-          ${isOwner ? `<button class="comment-delete" onclick="deleteComment('${mediaId}','${c._id}')">🗑️</button>` : ''}
-        </div>`;
-    }).join('');
-  } catch {
-    list.innerHTML = '<div style="text-align:center;color:var(--txt3);padding:20px">Could not load comments</div>';
-  }
-}
-
-async function postComment() {
-  const input = document.getElementById('comment-input');
-  const text = input.value.trim();
-  if (!text) return;
-  const token = localStorage.getItem('token');
-  if (!token) { showToast('Please login to comment', 'error'); return; }
-  try {
-    const res = await fetch(`${API}/social/comment/${currentMediaId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ text })
-    });
-    if (res.ok) {
-      input.value = '';
-      loadComments(currentMediaId);
-      addNotification('💬 Comment posted!');
-    } else {
-      showToast('Failed to post', 'error');
-    }
-  } catch {
-    showToast('Could not post comment', 'error');
-  }
-}
-
-async function deleteComment(mediaId, commentId) {
-  const token = localStorage.getItem('token');
-  if (!token) return;
-  try {
-    await fetch(`${API}/social/comment/${mediaId}/${commentId}`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    document.getElementById(`comment-${commentId}`)?.remove();
-    showToast('Comment deleted');
-  } catch {
-    showToast('Could not delete', 'error');
-  }
-}
-
-const commentModalEl = document.getElementById('comment-modal');
-if (commentModalEl) {
-  commentModalEl.addEventListener('click', function(e) {
-    if (e.target === this) closeCommentModal();
-  });
-}
-
 function attachMediaEvents(){
+  /* Like */
   document.querySelectorAll('.like-btn-small').forEach(btn=>{
     btn.addEventListener('click',async()=>{
       const id=btn.dataset.id;
       const token=localStorage.getItem('token');
-      if(!token){showToast('Please login to like photos','error');return;}
+      if(!token){ showToast('Please login to like photos','error'); return; }
       try{
         const res=await fetch(`${API}/social/like/${id}`,{method:'POST',headers:{Authorization:`Bearer ${token}`}});
         const data=await res.json();
         const cnt=btn.querySelector('.like-count');
-        if(data.liked!==undefined){
-          btn.classList.toggle('liked',data.liked);
-          cnt.textContent=data.likes??data.count;
-          if(data.liked){likes.push(id);addNotification('❤️ Photo liked');}
-          else likes=likes.filter(l=>l!==id);
-          saveLikes();
-        }
-      }catch{
-        // Demo toggle
-        if(isLiked(id)){likes=likes.filter(l=>l!==String(id));}
-        else{likes.push(String(id));addNotification('❤️ Photo liked');}
+        btn.classList.toggle('liked',data.liked);
+        cnt.textContent=data.likes??data.count;
+        if(data.liked){ likes.push(id); addNotification('❤️ Photo liked'); }
+        else likes=likes.filter(l=>l!==id);
+        saveLikes();
+      } catch {
+        if(isLiked(id)){ likes=likes.filter(l=>l!==String(id)); }
+        else{ likes.push(String(id)); addNotification('❤️ Photo liked'); }
         saveLikes();
         btn.classList.toggle('liked',isLiked(id));
         const cnt=btn.querySelector('.like-count');
@@ -850,66 +890,53 @@ function attachMediaEvents(){
       }
     });
   });
+
+  /* Favourite */
   document.querySelectorAll('.fav-btn-small').forEach(btn=>{
     btn.addEventListener('click',async()=>{
       const id=btn.dataset.id;
       const token=localStorage.getItem('token');
-      if(!token){showToast('Please login to favorite photos','error');return;}
+      if(!token){ showToast('Please login to favourite photos','error'); return; }
+      const faved=toggleFavorite(id);
+      btn.classList.toggle('favorited',faved);
+      const icon=btn.querySelector('i');
+      if(icon) icon.className=`fa-${faved?'solid':'regular'} fa-star`;
       try{
-        const res=await fetch(`${API}/social/favorite/${id}`,{method:'POST',headers:{Authorization:`Bearer ${token}`}});
-        const data=await res.json();
-        btn.classList.toggle('favorited',data.favorited);
-        const icon = btn.querySelector('i');
-if(icon) icon.className=`fa-${data.favorited?'solid':'regular'} fa-star`;
-        const faved=toggleFavorite(id);
-        showToast(faved?'⭐ Added to favorites!':'Removed from favorites');
-      }catch{
-        // Demo toggle
-        const faved=toggleFavorite(id);
-        btn.classList.toggle('favorited',faved);
-        const icon = btn.querySelector('i');
-        if (icon) icon.className = `fa-${faved?'solid':'regular'} fa-star`;
-        showToast(faved?'⭐ Added to favorites!':'Removed from favorites');
-      }
+        await fetch(`${API}/social/favorite/${id}`,{method:'POST',headers:{Authorization:`Bearer ${token}`}});
+      } catch{}
+      showToast(faved?'⭐ Added to favourites!':'Removed from favourites');
+    });
+  });
+
+  /* Comment button — open modal */
+  document.querySelectorAll('.comment-btn-small').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      e.stopPropagation();
+      const id  = btn.dataset.id;
+      const url = btn.dataset.url;
+      openCommentModal(id, url);
+    });
+  });
+
+  /* Download */
+  document.querySelectorAll('.download-btn-small').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      let url=btn.dataset.url.replaceAll('\\','/');
+      if(!url.startsWith('http')) url='https://event-and-media-management-paltform1.onrender.com/'+url;
+      const a=document.createElement('a'); a.href=url; a.download=''; a.target='_blank';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      showToast('⬇️ Download started!');
+    });
+  });
+
+  /* Share */
+  document.querySelectorAll('.share-btn-small').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      navigator.clipboard.writeText(btn.dataset.url).then(()=>showToast('🔗 Link copied!')).catch(()=>showToast('Could not copy','error'));
     });
   });
 }
-document.addEventListener("click", (e) => {
-  const btn = e.target.closest(".download-btn-small");
-  if (!btn) return;
 
-  let url = btn.dataset.url;
-
-  // Windows slash fix
-  url = url.replaceAll("\\", "/");
-
-  // agar url uploads/image.jpg hai
-  if (!url.startsWith("http")) {
-    url = "https://event-and-media-management-paltform1.onrender.com/" + url;
-  }
-
-  console.log("Download URL:", url);
-
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "";
-  a.target = "_blank";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-});
-document.addEventListener("click", (e) => {
-
-
-  // Share
-  if (e.target.closest(".share-btn-small")) {
-      const url = e.target.closest(".share-btn-small").dataset.url;
-
-      navigator.clipboard.writeText(url);
-      alert("Link copied!");
-  }
-
-});
 /* ════════════════════════════════
    GALLERY
 ════════════════════════════════ */
@@ -918,43 +945,25 @@ async function loadGallery(){
   if(!allMedia.length){
     grid.innerHTML='<div style="text-align:center;color:var(--txt3);grid-column:1/-1;padding:40px">Loading...</div>';
     try{
-      const res=await fetch(`${API}/events`);
-      const data=await res.json();
+      const res=await fetch(`${API}/events`); const data=await res.json();
       for(const ev of(data.events||[]).slice(0,5)){
-        try{
-          const mres=await fetch(`${API}/media/event/${ev._id}`);
-          const mdata=await mres.json();
-          allMedia=[...allMedia,...(mdata.media||[]).map(m=>({...m,eventName:ev.name}))];
-        }catch{}
+        try{ const mres=await fetch(`${API}/media/event/${ev._id}`); const mdata=await mres.json(); allMedia=[...allMedia,...(mdata.media||[]).map(m=>({...m,eventName:ev.name}))]; } catch{}
       }
-    }catch{allMedia=generateDemoMedia();}
+    } catch{ allMedia=generateDemoMedia(); }
   }
   renderGallery(allMedia);
   document.getElementById('gallery-count').textContent=allMedia.length+' items';
-  document.getElementById('search-input-gal')?.addEventListener('input',function(){
-    const kw=this.value.toLowerCase();
-    const filtered=allMedia.filter(m=>
-      (m.aiTags||[]).some(t=>t.includes(kw))||
-      (m.eventName||'').toLowerCase().includes(kw)||
-      (m.uploadedBy?.name||'').toLowerCase().includes(kw)
-    );
-    renderGallery(filtered);
-  });
 }
 
 document.getElementById('gallery-search').addEventListener('input',function(){
   const kw=this.value.toLowerCase();
-  const filtered=allMedia.filter(m=>
-    (m.aiTags||[]).some(t=>t.toLowerCase().includes(kw))||
-    (m.eventName||'').toLowerCase().includes(kw)||
-    (m.uploadedBy?.name||'').toLowerCase().includes(kw)
-  );
+  const filtered=allMedia.filter(m=>(m.aiTags||[]).some(t=>t.toLowerCase().includes(kw))||(m.eventName||'').toLowerCase().includes(kw)||(m.uploadedBy?.name||'').toLowerCase().includes(kw));
   renderGallery(filtered);
 });
 
 function renderGallery(media){
   const grid=document.getElementById('gallery-grid');
-  if(!media.length){grid.innerHTML='<p style="color:var(--txt3);grid-column:1/-1;padding:40px;text-align:center">No photos found</p>';return;}
+  if(!media.length){ grid.innerHTML='<p style="color:var(--txt3);grid-column:1/-1;padding:40px;text-align:center">No photos found</p>'; return; }
   grid.innerHTML=media.map(m=>{
     const imgUrl=m.url?.startsWith('http')?m.url:`https://event-and-media-management-paltform1.onrender.com${m.url||''}`;
     const faved=isFavorited(m._id);
@@ -968,17 +977,8 @@ function renderGallery(media){
       </div>
     </div>`;
   }).join('');
-  // Attach fav events
   document.querySelectorAll('#gallery-grid .fav-btn-small').forEach(btn=>{
-    btn.addEventListener('click',e=>{
-      e.stopPropagation();
-      const id=btn.dataset.id;
-      const faved=toggleFavorite(id);
-      btn.classList.toggle('favorited',faved);
-      const icon = btn.querySelector('i');
-        if (icon) icon.className = `fa-${faved?'solid':'regular'} fa-star`;
-      showToast(faved?'⭐ Saved to favorites!':'Removed from favorites');
-    });
+    btn.addEventListener('click',e=>{ e.stopPropagation(); const id=btn.dataset.id; const faved=toggleFavorite(id); btn.classList.toggle('favorited',faved); const icon=btn.querySelector('i'); if(icon) icon.className=`fa-${faved?'solid':'regular'} fa-star`; showToast(faved?'⭐ Saved to favourites!':'Removed from favourites'); });
   });
 }
 
@@ -988,32 +988,27 @@ function renderGallery(media){
 async function loadMyPhotos(){
   if(!allMedia.length){
     try{
-      const res=await fetch(`${API}/events`);
-      const data=await res.json();
+      const res=await fetch(`${API}/events`); const data=await res.json();
       for(const ev of(data.events||[]).slice(0,5)){
-        try{
-          const mres=await fetch(`${API}/media/event/${ev._id}`);
-          const mdata=await mres.json();
-          allMedia=[...allMedia,...(mdata.media||[]).map(m=>({...m,eventName:ev.name}))];
-        }catch{}
+        try{ const mres=await fetch(`${API}/media/event/${ev._id}`); const mdata=await mres.json(); allMedia=[...allMedia,...(mdata.media||[]).map(m=>({...m,eventName:ev.name}))]; } catch{}
       }
-    }catch{allMedia=generateDemoMedia();}
+    } catch{ allMedia=generateDemoMedia(); }
   }
-  // Filter by current user (demo: show all favorited + some)
   const token=localStorage.getItem('token');
   let myPhotos=[];
   if(token){
     try{
       const me=await fetch(`${API}/auth/me`,{headers:{Authorization:`Bearer ${token}`}}).then(r=>r.json());
+      currentUserId=me._id;
       myPhotos=allMedia.filter(m=>m.uploadedBy?._id===me._id||favorites.includes(String(m._id)));
-    }catch{}
+    } catch{}
   }
   if(!myPhotos.length) myPhotos=allMedia.filter(m=>favorites.includes(String(m._id)));
-  if(!myPhotos.length) myPhotos=allMedia.slice(0,6); // demo fallback
+  if(!myPhotos.length) myPhotos=allMedia.slice(0,6);
   document.getElementById('myphotos-count').textContent=myPhotos.length+' items';
   document.getElementById('my-photos-badge').textContent=myPhotos.length;
   const grid=document.getElementById('myphotos-grid');
-  if(!myPhotos.length){grid.innerHTML='<p style="color:var(--txt3);grid-column:1/-1;padding:40px;text-align:center">No photos found. Upload photos or use facial recognition to find yourself!</p>';return;}
+  if(!myPhotos.length){ grid.innerHTML='<p style="color:var(--txt3);grid-column:1/-1;padding:40px;text-align:center">No photos found.</p>'; return; }
   grid.innerHTML=myPhotos.map(m=>{
     const imgUrl=m.url?.startsWith('http')?m.url:`https://event-and-media-management-paltform1.onrender.com${m.url||''}`;
     return `<div class="photo-card">
@@ -1032,72 +1027,39 @@ async function loadMyPhotos(){
 function doSmartSearch(){
   const kw=document.getElementById('smart-search-input').value.toLowerCase().trim();
   const res=document.getElementById('smart-search-results');
-  if(!kw){res.innerHTML='<div style="text-align:center;color:var(--txt3);padding:40px">Type to search...</div>';return;}
-  const media=allMedia.filter(m=>
-    (m.aiTags||[]).some(t=>t.toLowerCase().includes(kw))||
-    (m.eventName||'').toLowerCase().includes(kw)||
-    (m.uploadedBy?.name||'').toLowerCase().includes(kw)
-  );
+  if(!kw){ res.innerHTML='<div style="text-align:center;color:var(--txt3);padding:40px">Type to search...</div>'; return; }
+  const media=allMedia.filter(m=>(m.aiTags||[]).some(t=>t.toLowerCase().includes(kw))||(m.eventName||'').toLowerCase().includes(kw)||(m.uploadedBy?.name||'').toLowerCase().includes(kw));
   const events=allEvents.filter(e=>e.name.toLowerCase().includes(kw)||(e.category||'').includes(kw));
-  if(!media.length&&!events.length){res.innerHTML='<p style="color:var(--txt3);text-align:center;padding:40px">No results found for "'+kw+'"</p>';return;}
+  if(!media.length&&!events.length){ res.innerHTML=`<p style="color:var(--txt3);text-align:center;padding:40px">No results for "${kw}"</p>`; return; }
   res.innerHTML='<div class="search-results">'+
-    events.map(e=>`
-      <div class="search-result-item" onclick="navigateTo('event-detail');loadEventDetail(allEvents.find(x=>x._id==='${e._id}'))">
-        <div style="width:50px;height:50px;border-radius:8px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">${CAT_EMOJIS[e.category]||'📁'}</div>
-        <div class="search-result-info">
-          <h4>📅 ${e.name}</h4>
-          <p>${e.category} · ${e.mediaCount||0} photos</p>
-        </div>
-      </div>`).join('')+
+    events.map(e=>`<div class="search-result-item" onclick="openEventDetail('${e._id}')">
+      <div style="width:50px;height:50px;border-radius:8px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">${CAT_EMOJIS[e.category]||'📁'}</div>
+      <div class="search-result-info"><h4>📅 ${e.name}</h4><p>${e.category} · ${e.mediaCount||0} photos</p></div>
+    </div>`).join('')+
     media.map(m=>{
       const imgUrl=m.url?.startsWith('http')?m.url:`https://event-and-media-management-paltform1.onrender.com${m.url||''}`;
       return `<div class="search-result-item">
         <img class="search-result-img" src="${imgUrl}" onerror="this.src='https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=200'" alt="">
-        <div class="search-result-info">
-          <h4>${m.eventName||'Photo'}</h4>
-          <p>${(m.aiTags||[]).map(t=>'#'+t).join(' ')}</p>
-        </div>
+        <div class="search-result-info"><h4>${m.eventName||'Photo'}</h4><p>${(m.aiTags||[]).map(t=>'#'+t).join(' ')}</p></div>
       </div>`;
     }).join('')+
   '</div>';
 }
 document.getElementById('global-search').addEventListener('input',function(){
-  if(this.value.trim()){
-    document.getElementById('smart-search-input').value=this.value;
-    navigateTo('search');
-    doSmartSearch();
-  }
+  if(this.value.trim()){ document.getElementById('smart-search-input').value=this.value; navigateTo('search'); doSmartSearch(); }
 });
 
 /* ════════════════════════════════
    ANALYTICS
 ════════════════════════════════ */
 function loadAnalytics(){
-  const cats=[{l:'Cultural Fest',v:35,c:'var(--acc3)'},
-    {l:'Competition',v:20,c:'var(--green)'},{l:'Sports',v:25,c:'var(--acc2)'},
-    {l:'Party',v:40,c:'#ec4899'},{l:'Workshop',v:10,c:'var(--blue)'}];
-  document.getElementById('cat-bars').innerHTML=cats.map(c=>`
-    <div class="bar-row">
-      <div class="bar-label">${c.l}</div>
-      <div class="bar-track"><div class="bar-fill" style="width:${c.v*2}%;background:${c.c}"></div></div>
-      <div class="bar-val">${c.v}%</div>
-    </div>`).join('');
-  const months=['Jan','Feb','Mar','Apr','May','Jun'];
-  const vals=[40,55,30,80,65,90];
-  document.getElementById('timeline-bars').innerHTML=months.map((m,i)=>`
-    <div class="bar-row">
-      <div class="bar-label">${m} 2026</div>
-      <div class="bar-track"><div class="bar-fill" style="width:${vals[i]}%;background:var(--acc)"></div></div>
-      <div class="bar-val">${vals[i]}</div>
-    </div>`).join('');
+  const cats=[{l:'Cultural Fest',v:35,c:'var(--acc3)'},{l:'Competition',v:20,c:'var(--green)'},{l:'Sports',v:25,c:'var(--acc2)'},{l:'Party',v:40,c:'#ec4899'},{l:'Workshop',v:10,c:'var(--blue)'}];
+  document.getElementById('cat-bars').innerHTML=cats.map(c=>`<div class="bar-row"><div class="bar-label">${c.l}</div><div class="bar-track"><div class="bar-fill" style="width:${c.v*2}%;background:${c.c}"></div></div><div class="bar-val">${c.v}%</div></div>`).join('');
+  const months=['Jan','Feb','Mar','Apr','May','Jun'], vals=[40,55,30,80,65,90];
+  document.getElementById('timeline-bars').innerHTML=months.map((m,i)=>`<div class="bar-row"><div class="bar-label">${m} 2026</div><div class="bar-track"><div class="bar-fill" style="width:${vals[i]}%;background:var(--acc)"></div></div><div class="bar-val">${vals[i]}</div></div>`).join('');
   const topEvents=allEvents.slice(0,5);
   const maxMedia=Math.max(...topEvents.map(e=>e.mediaCount||1),1);
-  document.getElementById('top-events-bars').innerHTML=topEvents.map(e=>`
-    <div class="bar-row">
-      <div class="bar-label" style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.name}</div>
-      <div class="bar-track"><div class="bar-fill" style="width:${Math.round((e.mediaCount||0)/maxMedia*100)}%;background:var(--blue)"></div></div>
-      <div class="bar-val">${e.mediaCount||0}</div>
-    </div>`).join('')||'<p style="color:var(--txt3);font-size:12px">No events yet</p>';
+  document.getElementById('top-events-bars').innerHTML=topEvents.map(e=>`<div class="bar-row"><div class="bar-label" style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.name}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round((e.mediaCount||0)/maxMedia*100)}%;background:var(--blue)"></div></div><div class="bar-val">${e.mediaCount||0}</div></div>`).join('')||'<p style="color:var(--txt3);font-size:12px">No events yet</p>';
   document.getElementById('engagement-bars').innerHTML=`
     <div class="bar-row"><div class="bar-label">Likes</div><div class="bar-track"><div class="bar-fill" style="width:82%;background:var(--acc2)"></div></div><div class="bar-val">4.9K</div></div>
     <div class="bar-row"><div class="bar-label">Comments</div><div class="bar-track"><div class="bar-fill" style="width:45%;background:var(--acc3)"></div></div><div class="bar-val">1.2K</div></div>
@@ -1108,8 +1070,8 @@ function loadAnalytics(){
 /* ════════════════════════════════
    CREATE EVENT
 ════════════════════════════════ */
-function openCreateEvent(){document.getElementById('create-event-modal').classList.add('open')}
-function closeCreateEvent(){document.getElementById('create-event-modal').classList.remove('open');document.getElementById('create-msg').textContent=''}
+function openCreateEvent(){ document.getElementById('create-event-modal').classList.add('open'); }
+function closeCreateEvent(){ document.getElementById('create-event-modal').classList.remove('open'); document.getElementById('create-msg').textContent=''; }
 
 async function createNewEvent(){
   const name=document.getElementById('ev-name').value.trim();
@@ -1119,92 +1081,68 @@ async function createNewEvent(){
   const isPublic=document.getElementById('ev-visibility').value==='true';
   const location=document.getElementById('ev-location').value.trim();
   const msg=document.getElementById('create-msg');
-  if(!name||!date){msg.style.color='#f87171';msg.textContent='⚠️ Event name and date are required';return;}
+  if(!name||!date){ msg.style.color='#f87171'; msg.textContent='⚠️ Event name and date are required'; return; }
   const token=localStorage.getItem('token');
-  if(!token){msg.style.color='#f87171';msg.textContent='⚠️ Please login first';return;}
-  msg.style.color='var(--txt3)';msg.textContent='⏳ Creating event...';
+  if(!token){ msg.style.color='#f87171'; msg.textContent='⚠️ Please login first'; return; }
+  msg.style.color='var(--txt3)'; msg.textContent='⏳ Creating event...';
   try{
-    const res=await fetch(`${API}/events`,{
-      method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},
-      body:JSON.stringify({name,category,date,description:desc,isPublic,location}),
-    });
+    const res=await fetch(`${API}/events`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify({name,category,date,description:desc,isPublic,location})});
     const data=await res.json();
-    if(res.ok&&data._id){
-      msg.style.color='var(--green)';msg.textContent='✅ Event created!';
-      addNotification(`📅 New event "${name}" created`);
-      allEvents.unshift(data);
-      setTimeout(()=>{closeCreateEvent();navigateTo('events');loadAllEvents();},1200);
-    }else{msg.style.color='#f87171';msg.textContent='❌ '+(data.message||'Failed to create event');}
-  }catch(e){
-    // Demo mode
+    if(res.ok&&data._id){ msg.style.color='var(--green)'; msg.textContent='✅ Event created!'; addNotification(`📅 New event "${name}" created`); allEvents.unshift(data); setTimeout(()=>{ closeCreateEvent(); navigateTo('events'); loadAllEvents(); },1200); }
+    else{ msg.style.color='#f87171'; msg.textContent='❌ '+(data.message||'Failed to create event'); }
+  } catch {
     const demoEv={_id:'new-'+Date.now(),name,category,date,description:desc,isPublic,mediaCount:0};
     allEvents.unshift(demoEv);
-    msg.style.color='var(--green)';msg.textContent='✅ Event created (demo mode)!';
+    msg.style.color='var(--green)'; msg.textContent='✅ Event created (demo)!';
     addNotification(`📅 New event "${name}" created`);
-    setTimeout(()=>{closeCreateEvent();navigateTo('events');},1200);
+    setTimeout(()=>{ closeCreateEvent(); navigateTo('events'); },1200);
   }
 }
-
-
-function logoutUser(){
-  localStorage.removeItem("token");
-  localStorage.removeItem("user");
-  localStorage.removeItem("fv_likes");
-  localStorage.removeItem("fv_favorites");
-
-  window.location.href = "login-register.html";
-}
-
-// document.querySelector(".sidebar-user").addEventListener("click", logoutUser);
+document.getElementById('create-event-modal').addEventListener('click',function(e){ if(e.target===this) closeCreateEvent(); });
 
 /* ════════════════════════════════
    UPLOAD
 ════════════════════════════════ */
 document.getElementById('file-input-upload').addEventListener('change',function(){
-  const wrap=document.getElementById('preview-wrap');wrap.innerHTML='';
-  [...this.files].forEach(f=>{
-    const r=new FileReader();
-    r.onload=e=>{
-      const d=document.createElement('div');d.className='preview-item';
-      d.innerHTML=`<img src="${e.target.result}" alt="preview">`;
-      wrap.appendChild(d);
-    };r.readAsDataURL(f);
-  });
+  const wrap=document.getElementById('preview-wrap'); wrap.innerHTML='';
+  [...this.files].forEach(f=>{ const r=new FileReader(); r.onload=e=>{ const d=document.createElement('div'); d.className='preview-item'; d.innerHTML=`<img src="${e.target.result}" alt="preview">`; wrap.appendChild(d); }; r.readAsDataURL(f); });
 });
 const ua=document.getElementById('upload-area');
-ua.addEventListener('dragover',e=>{e.preventDefault();ua.classList.add('drag-over')});
+ua.addEventListener('dragover',e=>{ e.preventDefault(); ua.classList.add('drag-over'); });
 ua.addEventListener('dragleave',()=>ua.classList.remove('drag-over'));
-ua.addEventListener('drop',e=>{e.preventDefault();ua.classList.remove('drag-over');document.getElementById('file-input-upload').files=e.dataTransfer.files;document.getElementById('file-input-upload').dispatchEvent(new Event('change'))});
+ua.addEventListener('drop',e=>{ e.preventDefault(); ua.classList.remove('drag-over'); document.getElementById('file-input-upload').files=e.dataTransfer.files; document.getElementById('file-input-upload').dispatchEvent(new Event('change')); });
 
 async function doUpload(){
   const token=localStorage.getItem('token');
   const status=document.getElementById('upload-status');
-  if(!token){showToast('Please login first','error');return;}
+  if(!token){ showToast('Please login first','error'); return; }
   const input=document.getElementById('file-input-upload');
-  if(!input.files.length){showToast('⚠️ Select files first','error');return;}
-  status.className='upload-status loading';status.textContent='⏳ Uploading...';
+  if(!input.files.length){ showToast('⚠️ Select files first','error'); return; }
+  status.className='upload-status loading'; status.textContent='⏳ Uploading...';
   try{
     const evRes=await fetch(`${API}/events`).then(r=>r.json());
-    if(!evRes.events?.length){showToast('Create an event first','error');status.textContent='';return;}
+    if(!evRes.events?.length){ showToast('Create an event first','error'); status.textContent=''; return; }
     const eventId=evRes.events[0]._id;
     const fd=new FormData();
     [...input.files].forEach(f=>fd.append('media',f));
     const res=await fetch(`${API}/media/upload/${eventId}`,{method:'POST',headers:{Authorization:`Bearer ${token}`},body:fd});
     const data=await res.json();
-    status.className='upload-status success';status.textContent=`✅ Uploaded ${data.uploaded} file(s) with AI tagging!`;
+    status.className='upload-status success'; status.textContent=`✅ Uploaded ${data.uploaded} file(s) with AI tagging!`;
     addNotification(`📸 ${data.uploaded} photo(s) uploaded to ${evRes.events[0].name}`);
     document.getElementById('preview-wrap').innerHTML='';
-  }catch(e){
-    status.className='upload-status error';status.textContent='❌ Upload failed: '+e.message;
+  } catch(e){
+    status.className='upload-status error'; status.textContent='❌ Upload failed: '+e.message;
   }
 }
 
 /* ════════════════════════════════
-   CLOSE MODAL ON BACKDROP CLICK
+   LOGOUT
 ════════════════════════════════ */
-document.getElementById('create-event-modal').addEventListener('click',function(e){
-  if(e.target===this) closeCreateEvent();
-});
+function logoutUser(){
+  localStorage.removeItem('token'); localStorage.removeItem('user');
+  localStorage.removeItem('fv_likes'); localStorage.removeItem('fv_favorites');
+  window.location.href='login-register.html';
+}
 
 /* ════════════════════════════════
    RESTORE SESSION
@@ -1215,6 +1153,7 @@ if(token){
     .then(r=>r.json())
     .then(user=>{
       if(user.name){
+        currentUserId=user._id;
         const initials=user.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
         document.getElementById('user-avatar').textContent=initials;
         document.getElementById('user-name').textContent=user.name;
@@ -1224,7 +1163,7 @@ if(token){
 }
 
 /* ════════════════════════════════
-   SOCKET.IO (if available)
+   SOCKET.IO
 ════════════════════════════════ */
 try{
   const script=document.createElement('script');
@@ -1233,10 +1172,19 @@ try{
     try{
       const socket=io('https://event-and-media-management-paltform1.onrender.com');
       socket.on('notification',n=>addNotification(n.message||'New notification'));
-    }catch{}
+      /* Real-time comment notification */
+      socket.on('new-comment',data=>{
+        if(data.mediaId && data.mediaId!==currentMediaId){
+          addNotification(`💬 New comment: "${data.text?.slice(0,30)}..."`);
+        } else if(data.mediaId===currentMediaId){
+          /* Refresh comment list if modal is open */
+          loadComments(currentMediaId);
+        }
+      });
+    } catch{}
   };
   document.head.appendChild(script);
-}catch{}
+} catch{}
 
 /* ════════════════════════════════
    INIT
@@ -1244,84 +1192,7 @@ try{
 renderNotifBadge();
 renderNotifPanel();
 loadDashboardEvents();
-
-/* Set today's date as default for event creation */
 document.getElementById('ev-date').value=new Date().toISOString().split('T')[0];
 </script>
-
-<!--
-══════════════════════════════════════════════════════════════════
-  BACKEND FIXES — READ THIS
-══════════════════════════════════════════════════════════════════
-
-1. NOTIFICATIONS PERSISTING AFTER REFRESH
-   ──────────────────────────────────────
-   The frontend now stores notifications in localStorage so they
-   persist across page refreshes automatically.
-
-   To ALSO save to MongoDB, add this to your backend:
-
-   // models/Notification.js
-   const mongoose = require('mongoose');
-   const notifSchema = new mongoose.Schema({
-     userId:  { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-     message: String,
-     read:    { type: Boolean, default: false },
-   }, { timestamps: true });
-   module.exports = mongoose.model('Notification', notifSchema);
-
-   // routes/notifications.js
-   const Notification = require('../models/Notification');
-   // GET /api/notifications — fetch for logged-in user
-   router.get('/', auth, async (req, res) => {
-     const notifs = await Notification.find({ userId: req.user._id }).sort({ createdAt: -1 }).limit(50);
-     res.json(notifs);
-   });
-   // POST /api/notifications — create one
-   router.post('/', auth, async (req, res) => {
-     const n = await Notification.create({ userId: req.user._id, message: req.body.message });
-     res.json(n);
-   });
-   // PATCH /api/notifications/read — mark all read
-   router.patch('/read', auth, async (req, res) => {
-     await Notification.updateMany({ userId: req.user._id }, { read: true });
-     res.json({ ok: true });
-   });
-
-   Then in Socket.IO, emit to user's room and also save:
-   socket.on('like', async ({ mediaId, userId }) => {
-     const msg = '❤️ Someone liked your photo';
-     await Notification.create({ userId, message: msg });
-     io.to(userId).emit('notification', { message: msg });
-   });
-
-2. FAVORITES DISAPPEARING AFTER REFRESH
-   ─────────────────────────────────────
-   The frontend now saves favorites in localStorage — they will
-   NOT disappear on refresh anymore.
-
-   To persist favorites in MongoDB (so they sync across devices),
-   your existing POST /api/social/favorite/:mediaId route should
-   toggle the user ID in a favorites array. Make sure the GET
-   endpoint returns whether the current user has favorited it:
-
-   // In your media model, add:
-   favorites: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
-
-   // In GET /api/media/event/:id, add to each media item:
-   isFavorited: media.favorites.includes(req.user?._id)
-
-   Then on the frontend, read isFavorited from the API response
-   and initialize the favorites array accordingly.
-
-   On page load, call:
-   fetch('/api/media/favorites', { headers: { Authorization: 'Bearer ...' } })
-     .then(r => r.json())
-     .then(data => {
-       favorites = data.map(m => m._id.toString());
-       localStorage.setItem('fv_favorites', JSON.stringify(favorites));
-     });
-──────────────────────────────────────────────────────────────────
--->
 </body>
 </html>
