@@ -124,6 +124,10 @@ a{
 <script>
 
 const API="https://event-and-media-management-paltform1.onrender.com/api";
+/* Already logged in — dashboard pe bhejo */
+if(localStorage.getItem('token')){
+  window.location.href = 'index.html';
+}
 
 function showLogin(){
     document.getElementById("registerForm").style.display="none";

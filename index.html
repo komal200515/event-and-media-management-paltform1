@@ -86,9 +86,9 @@
     <i class="fa-solid fa-bell"></i>
     <span class="notif-dot" id="notif-count">0</span>
   </button>
-  <button class="mobile-logout-btn" onclick="logoutUser()" title="Logout">
+<button class="mobile-logout-btn" onclick="logoutUser()" title="Logout">
     <i class="fa-solid fa-right-from-bracket"></i>
-  </button>
+</button>
 </div>
 </div> <!-- ← TOPBAR DIV CLOSE -->
 
@@ -350,6 +350,13 @@
 
 <script>
 const API = 'https://event-and-media-management-paltform1.onrender.com/api';
+/* Already logged in — dashboard pe bhejo */
+/* ════════════════════════════════
+   AUTH GUARD — Login check
+════════════════════════════════ */
+if(!localStorage.getItem('token')){
+  window.location.href = 'login-register.html';
+}
 
 /* ════════════════════════════════
    STATE
