@@ -710,6 +710,103 @@ function mediaItemHTML(m){
     ${tags ? `<div class="ai-tags-mini">${tags}</div>` : ""}
   </div>`;
 }
+/* ════════════════════════════════
+   COMMENTS
+════════════════════════════════ */
+let currentMediaId = null;
+
+function openCommentModal(mediaId, imgUrl) {
+  currentMediaId = mediaId;
+  document.getElementById('comment-photo').src = imgUrl;
+  document.getElementById('comment-modal').classList.add('open');
+  loadComments(mediaId);
+}
+
+function closeCommentModal() {
+  document.getElementById('comment-modal').classList.remove('open');
+  currentMediaId = null;
+}
+
+async function loadComments(mediaId) {
+  const list = document.getElementById('comment-list');
+  list.innerHTML = '<div style="text-align:center;color:var(--txt3);padding:20px">Loading...</div>';
+  try {
+    const res = await fetch(`${API}/social/comments/${mediaId}`);
+    const data = await res.json();
+    const comments = data.comments || [];
+    if (!comments.length) {
+      list.innerHTML = '<div style="text-align:center;color:var(--txt3);padding:20px">No comments yet. Be the first!</div>';
+      return;
+    }
+    const token = localStorage.getItem('token');
+    let myId = null;
+    if (token) {
+      try {
+        const me = await fetch(`${API}/auth/me`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json());
+        myId = me._id;
+      } catch {}
+    }
+    list.innerHTML = comments.map(c => {
+      const initials = (c.user?.name || 'U').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+      const isOwner = myId && String(c.user?._id) === String(myId);
+      return `
+        <div class="comment-item" id="comment-${c._id}">
+          <div class="comment-avatar">${initials}</div>
+          <div class="comment-body">
+            <div class="comment-name">${c.user?.name || 'User'}</div>
+            <div class="comment-text">${c.text}</div>
+            <div class="comment-time">${timeAgo(c.createdAt)}</div>
+          </div>
+          ${isOwner ? `<button class="comment-delete" onclick="deleteComment('${mediaId}','${c._id}')">🗑️</button>` : ''}
+        </div>`;
+    }).join('');
+  } catch {
+    list.innerHTML = '<div style="text-align:center;color:var(--txt3);padding:20px">Could not load comments</div>';
+  }
+}
+
+async function postComment() {
+  const input = document.getElementById('comment-input');
+  const text = input.value.trim();
+  if (!text) return;
+  const token = localStorage.getItem('token');
+  if (!token) { showToast('Please login to comment', 'error'); return; }
+  try {
+    const res = await fetch(`${API}/social/comment/${currentMediaId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ text })
+    });
+    if (res.ok) {
+      input.value = '';
+      loadComments(currentMediaId);
+      addNotification('💬 Comment posted!');
+    } else {
+      showToast('Failed to post', 'error');
+    }
+  } catch {
+    showToast('Could not post comment', 'error');
+  }
+}
+
+async function deleteComment(mediaId, commentId) {
+  const token = localStorage.getItem('token');
+  if (!token) return;
+  try {
+    await fetch(`${API}/social/comment/${mediaId}/${commentId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    document.getElementById(`comment-${commentId}`)?.remove();
+    showToast('Comment deleted');
+  } catch {
+    showToast('Could not delete', 'error');
+  }
+}
+
+document.getElementById('comment-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeCommentModal();
+});
 
 function attachMediaEvents(){
   document.querySelectorAll('.like-btn-small').forEach(btn=>{
