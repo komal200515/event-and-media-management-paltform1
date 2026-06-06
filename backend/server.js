@@ -12,7 +12,7 @@ require('dotenv').config();
 const allowedOrigins = [
   'http://localhost:5500',
   'http://127.0.0.1:5500',
-  'https://eventmedia-komal.vercel.app',
+    'https://event-and-media-management-paltform.vercel.app',
 ];
 
 const app        = express();
