@@ -78,16 +78,19 @@
       <i class="fa-solid fa-magnifying-glass"></i>
       <input type="text" id="global-search" placeholder="Search events, photos...">
     </div>
-    <div class="topbar-actions">
-      <button class="btn-new-event" onclick="openCreateEvent()">
-        <i class="fa-solid fa-plus"></i> New Event
-      </button>
-      <button class="notif-btn" id="notif-bell-btn" onclick="toggleNotifPanel()">
-        <i class="fa-solid fa-bell"></i>
-        <span class="notif-dot" id="notif-count">0</span>
-      </button>
-    </div>
-  </div>
+<div class="topbar-actions">
+  <button class="btn-new-event" onclick="openCreateEvent()">
+    <i class="fa-solid fa-plus"></i> New Event
+  </button>
+  <button class="notif-btn" id="notif-bell-btn" onclick="toggleNotifPanel()">
+    <i class="fa-solid fa-bell"></i>
+    <span class="notif-dot" id="notif-count">0</span>
+  </button>
+  <!-- Mobile logout button -->
+  <button class="mobile-logout-btn" onclick="logoutUser()" title="Logout">
+    <i class="fa-solid fa-right-from-bracket"></i>
+  </button>
+</div>
 
   <!-- CONTENT -->
   <div class="content">
