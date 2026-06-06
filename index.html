@@ -668,7 +668,7 @@ function mediaItemHTML(m){
   const fixedUrl = rawUrl.replaceAll("\\", "/");
   const imgUrl = fixedUrl.startsWith("http")
     ? fixedUrl
-    : `http://localhost:5000/${fixedUrl.replace(/^\/+/, "")}`;
+    : `https://event-and-media-management-paltform1.onrender.com/${fixedUrl.replace(/^\/+/, "")}`;
 
   const faved = isFavorited(m._id);
   const liked = isLiked(m._id);
@@ -699,6 +699,10 @@ function mediaItemHTML(m){
 
       <button class="share-btn-small" data-url="${imgUrl}">
         🔗
+      </button>
+
+      <button class="comment-btn-small" onclick="openCommentModal('${m._id}','${imgUrl}')">
+        💬 <span style="font-size:11px">${m.comments?.length || 0}</span>
       </button>
 
     </div>
@@ -744,7 +748,8 @@ function attachMediaEvents(){
         const res=await fetch(`${API}/social/favorite/${id}`,{method:'POST',headers:{Authorization:`Bearer ${token}`}});
         const data=await res.json();
         btn.classList.toggle('favorited',data.favorited);
-        btn.querySelector('i').className=`fa-${data.favorited?'solid':'regular'} fa-star`;
+        const icon = btn.querySelector('i');
+if(icon) icon.className=`fa-${data.favorited?'solid':'regular'} fa-star`;
         const faved=toggleFavorite(id);
         showToast(faved?'⭐ Added to favorites!':'Removed from favorites');
       }catch{
