@@ -150,9 +150,7 @@ body {
 /* ══════════════════════════════════════════════════════════════
    TOPBAR
 ══════════════════════════════════════════════════════════════ */
-/* Mobile logout — topbar mein */
-.mobile-logout-btn {
-  display: none; /* Desktop pe chhupa */
+.logout-topbar-btn {
   width: 38px;
   height: 38px;
   background: #ef4444;
@@ -161,12 +159,16 @@ body {
   cursor: pointer;
   color: white;
   font-size: 15px;
+  display: flex;
   align-items: center;
   justify-content: center;
   transition: background 0.2s;
+  flex-shrink: 0;
 }
 
-.mobile-logout-btn:hover { background: #dc2626; }
+.logout-topbar-btn:hover {
+  background: #dc2626;
+}
 
 /* Phone pe dikhao */
 @media (max-width: 700px) {
