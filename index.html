@@ -314,7 +314,7 @@
         <input type="text" id="ev-location" placeholder="e.g. Main Auditorium">
       </div>
     </div>
-    <button class="btn-create" onclick="createEvent()">
+    <button class="btn-create" onclick="createNewEvent()">
       <i class="fa-solid fa-calendar-plus"></i> Create Event
     </button>
     <div id="create-msg"></div>
@@ -993,7 +993,7 @@ function loadAnalytics(){
 function openCreateEvent(){document.getElementById('create-event-modal').classList.add('open')}
 function closeCreateEvent(){document.getElementById('create-event-modal').classList.remove('open');document.getElementById('create-msg').textContent=''}
 
-async function createEvent(){
+async function createNewEvent(){
   const name=document.getElementById('ev-name').value.trim();
   const category=document.getElementById('ev-category').value;
   const date=document.getElementById('ev-date').value;
