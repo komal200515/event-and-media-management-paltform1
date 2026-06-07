@@ -34,7 +34,7 @@
     <button class="nav-item" data-page="gallery">
       <span class="nav-icon"><i class="fa-solid fa-images"></i></span> Gallery
     </button>
-    <button class="nav-item" data-page="upload">
+    <button class="nav-item" id="nav-upload" data-page="upload">
       <span class="nav-icon"><i class="fa-solid fa-cloud-arrow-up"></i></span> Upload
     </button>
 
@@ -57,16 +57,13 @@
     </button>
   </nav>
 
-<div class="sidebar-user">
-  <div class="user-avatar" id="user-avatar">KS</div>
-  <div class="user-info">
-    <div class="user-name" id="user-name">Komal Sharma</div>
-    <div class="user-role" id="user-role">Photographer</div>
+  <div class="sidebar-user">
+    <div class="user-avatar" id="user-avatar">KS</div>
+    <div class="user-info">
+      <div class="user-name" id="user-name">Komal Sharma</div>
+      <div class="user-role" id="user-role">Photographer</div>
+    </div>
   </div>
-  <!-- <button class="logout-btn" onclick="logoutUser()" title="Logout">
-    <i class="fa-solid fa-right-from-bracket"></i>
-  </button> -->
-</div>
 </aside>
 
 <!-- ── MAIN ── -->
@@ -78,19 +75,19 @@
       <i class="fa-solid fa-magnifying-glass"></i>
       <input type="text" id="global-search" placeholder="Search events, photos...">
     </div>
-<div class="topbar-actions">
-  <button class="btn-new-event" onclick="openCreateEvent()">
-    <i class="fa-solid fa-plus"></i> New Event
-  </button>
-  <button class="notif-btn" id="notif-bell-btn" onclick="toggleNotifPanel()">
-    <i class="fa-solid fa-bell"></i>
-    <span class="notif-dot" id="notif-count">0</span>
-  </button>
-<button class="mobile-logout-btn" onclick="logoutUser()" title="Logout">
-    <i class="fa-solid fa-right-from-bracket"></i>
-</button>
-</div>
-</div> <!-- ← TOPBAR DIV CLOSE -->
+    <div class="topbar-actions">
+      <button class="btn-new-event" id="topbar-new-event-btn" onclick="openCreateEvent()">
+        <i class="fa-solid fa-plus"></i> New Event
+      </button>
+      <button class="notif-btn" id="notif-bell-btn" onclick="toggleNotifPanel()">
+        <i class="fa-solid fa-bell"></i>
+        <span class="notif-dot" id="notif-count">0</span>
+      </button>
+      <button class="mobile-logout-btn" onclick="logoutUser()" title="Logout">
+        <i class="fa-solid fa-right-from-bracket"></i>
+      </button>
+    </div>
+  </div>
 
   <!-- CONTENT -->
   <div class="content">
@@ -137,11 +134,21 @@
 
     <!-- ══ EVENTS PAGE ══ -->
     <div class="page" id="page-events">
-      <div class="sec-hd" style="margin-bottom:20px">
+      <!-- ✅ FEATURE 1: Sort header — clean single sec-hd -->
+      <div class="sec-hd" style="margin-bottom:12px">
         <h2>All Events</h2>
         <div class="sec-count" id="all-events-count">0 total</div>
-        <div class="sec-action">
-          <button class="btn-new-event" style="font-size:12px;padding:8px 14px" onclick="openCreateEvent()">
+        <div class="sec-action" style="display:flex;gap:8px;align-items:center">
+          <select id="sort-by" onchange="sortAndRenderEvents()"
+            style="padding:7px 12px;background:var(--bg3);border:1px solid var(--border);
+                   border-radius:8px;color:var(--txt);font-size:12px;outline:none;cursor:pointer">
+            <option value="date_desc">📅 Newest first</option>
+            <option value="date_asc">📅 Oldest first</option>
+            <option value="name_asc">🔤 Name A→Z</option>
+            <option value="name_desc">🔤 Name Z→A</option>
+            <option value="category">📁 Category</option>
+          </select>
+          <button class="btn-new-event" id="events-new-event-btn" style="font-size:12px;padding:8px 14px" onclick="openCreateEvent()">
             <i class="fa-solid fa-plus"></i> New Event
           </button>
         </div>
@@ -177,18 +184,17 @@
     <!-- ══ UPLOAD PAGE ══ -->
     <div class="page" id="page-upload">
       <div class="sec-hd" style="margin-bottom:20px"><h2>Upload Media</h2></div>
-        <!-- Event Select -->
-     <div style="max-width:600px;margin:0 auto 20px;">
-    <label style="font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;">Select Event</label>
-    <select id="upload-event-select" style="width:100%;padding:10px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--txt);font-size:13px;outline:none;">
-    </select>
-    <input 
-      type="text" 
-      id="upload-event-search" 
-           placeholder="Search event..."
-           style="width:100%;padding:10px 14px;margin-bottom:8px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--txt);font-size:13px;outline:none;"
+      <div style="max-width:600px;margin:0 auto 20px;">
+        <label style="font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;">Select Event</label>
+        <input
+          type="text"
+          id="upload-event-search"
+          placeholder="Search event..."
+          style="width:100%;padding:10px 14px;margin-bottom:8px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--txt);font-size:13px;outline:none;"
           oninput="filterUploadEvents()"
-      >
+        >
+        <select id="upload-event-select" style="width:100%;padding:10px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--txt);font-size:13px;outline:none;">
+        </select>
       </div>
       <div class="upload-area" id="upload-area" onclick="document.getElementById('file-input-upload').click()">
         <div class="upload-ico"><i class="fa-solid fa-cloud-arrow-up"></i></div>
@@ -319,34 +325,24 @@
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════════════════
-     COMMENT MODAL  ← NEW: Instagram-style split panel
-══════════════════════════════════════════════════════════════ -->
+<!-- ── COMMENT MODAL ── -->
 <div class="comment-modal-overlay" id="comment-modal-overlay">
   <div class="comment-modal-box">
-
-    <!-- Left: photo preview -->
     <div class="comment-modal-left">
       <img id="comment-modal-photo" src="" alt="photo"
            onerror="this.src='https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800'">
     </div>
-
-    <!-- Right: comment panel -->
     <div class="comment-modal-right">
       <div class="comment-modal-header">
         <span><i class="fa-regular fa-comment" style="margin-right:6px;color:var(--blue)"></i>Comments</span>
         <button class="comment-modal-close" onclick="closeCommentModal()" title="Close">✕</button>
       </div>
-
-      <!-- Comment list -->
       <div class="comment-list" id="comment-list">
         <div class="comment-empty">
           <i class="fa-regular fa-comment-dots"></i>
           No comments yet. Be the first!
         </div>
       </div>
-
-      <!-- Input row -->
       <div class="comment-input-row">
         <input type="text" id="comment-input"
                placeholder="Add a comment..."
@@ -354,7 +350,6 @@
         <button class="comment-post-btn" onclick="postComment()">Post</button>
       </div>
     </div>
-
   </div>
 </div>
 
@@ -363,9 +358,9 @@
 
 <script>
 const API = 'https://event-and-media-management-paltform1.onrender.com/api';
-/* Already logged in — dashboard pe bhejo */
+
 /* ════════════════════════════════
-   AUTH GUARD — Login check
+   AUTH GUARD
 ════════════════════════════════ */
 if(!localStorage.getItem('token')){
   window.location.href = 'login-register.html';
@@ -374,14 +369,50 @@ if(!localStorage.getItem('token')){
 /* ════════════════════════════════
    STATE
 ════════════════════════════════ */
-let notifications = JSON.parse(localStorage.getItem('fv_notifications') || '[]');
-let favorites     = JSON.parse(localStorage.getItem('fv_favorites')     || '[]');
-let likes         = JSON.parse(localStorage.getItem('fv_likes')         || '[]');
-let allEvents     = [];
-let allMedia      = [];
-let currentPage   = 'dashboard';
-let currentMediaId = null;   // for comment modal
-let currentUserId  = null;   // logged-in user id
+let notifications  = JSON.parse(localStorage.getItem('fv_notifications') || '[]');
+let favorites      = JSON.parse(localStorage.getItem('fv_favorites')     || '[]');
+let likes          = JSON.parse(localStorage.getItem('fv_likes')         || '[]');
+let allEvents      = [];
+let allMedia       = [];
+let currentPage    = 'dashboard';
+let currentMediaId = null;
+let currentUserId  = null;
+window.currentRole = 'viewer'; // default until API responds
+
+/* ════════════════════════════════
+   FEATURE 2 — ROLE-BASED UI
+════════════════════════════════ */
+function applyRolePermissions(role) {
+  role = (role || 'viewer').toLowerCase();
+  window.currentRole = role;
+
+  const canUpload      = ['admin', 'photographer', 'club_member', 'member'].includes(role);
+  const canCreateEvent = ['admin', 'photographer'].includes(role);
+
+  /* Hide Upload nav for viewers */
+  const uploadNav = document.getElementById('nav-upload');
+  if (uploadNav) uploadNav.style.display = canUpload ? '' : 'none';
+
+  /* Hide "New Event" buttons for non-admins/photographers */
+  document.querySelectorAll('#topbar-new-event-btn, #events-new-event-btn').forEach(btn => {
+    btn.style.display = canCreateEvent ? '' : 'none';
+  });
+
+  /* Color-coded role label in sidebar */
+  const roleEl = document.getElementById('user-role');
+  if (roleEl) {
+    const labels = {
+      admin:        { text: '👑 Admin',        color: '#a78bfa' },
+      photographer: { text: '📷 Photographer', color: '#4ade80' },
+      club_member:  { text: '👥 Club Member',  color: '#63b3ed' },
+      member:       { text: '👤 Member',       color: '#63b3ed' },
+      viewer:       { text: '👁 Viewer',       color: '#9a9ab0' }
+    };
+    const info = labels[role] || labels.viewer;
+    roleEl.textContent = info.text;
+    roleEl.style.color = info.color;
+  }
+}
 
 /* ════════════════════════════════
    NAVIGATION
@@ -392,75 +423,77 @@ const pageTitles = {
   search:'Smart Search', notifications:'Notifications', analytics:'Analytics'
 };
 
-function navigateTo(page, data){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  const el = document.getElementById('page-'+page);
-  if(el) el.classList.add('active');
+function navigateTo(page, data) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const el = document.getElementById('page-' + page);
+  if (el) el.classList.add('active');
   const navEl = document.querySelector(`.nav-item[data-page="${page}"]`);
-  if(navEl) navEl.classList.add('active');
+  if (navEl) navEl.classList.add('active');
   document.getElementById('topbar-title').textContent = pageTitles[page] || page;
   currentPage = page;
-  if(page==='events') loadAllEvents();
-  else if(page==='gallery') loadGallery();
-  else if(page==='myphotos') loadMyPhotos();
-  else if(page==='analytics') loadAnalytics();
-  else if(page==='upload') loadUploadEvents();
-  else if(page==='event-detail' && data) loadEventDetail(data);
-  else if(page==='notifications') renderNotifPage();
+  if (page === 'events')         loadAllEvents();
+  else if (page === 'gallery')   loadGallery();
+  else if (page === 'myphotos')  loadMyPhotos();
+  else if (page === 'analytics') loadAnalytics();
+  else if (page === 'upload')    loadUploadEvents();
+  else if (page === 'event-detail' && data) loadEventDetail(data);
+  else if (page === 'notifications') renderNotifPage();
 }
 
-document.querySelectorAll('.nav-item').forEach(btn=>{
-  btn.addEventListener('click',()=>navigateTo(btn.dataset.page));
+document.querySelectorAll('.nav-item').forEach(btn => {
+  btn.addEventListener('click', () => navigateTo(btn.dataset.page));
 });
 
 /* ════════════════════════════════
    TOAST
 ════════════════════════════════ */
-function showToast(msg, type='success'){
-  const t=document.getElementById('toast');
-  t.textContent=msg; t.className='show'+(type==='error'?' error':'');
-  clearTimeout(t._t); t._t=setTimeout(()=>t.className='',3200);
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show' + (type === 'error' ? ' error' : '');
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.className = '', 3200);
 }
 
 /* ════════════════════════════════
    NOTIFICATIONS
 ════════════════════════════════ */
-function saveNotifications(){ localStorage.setItem('fv_notifications', JSON.stringify(notifications)); }
+function saveNotifications() { localStorage.setItem('fv_notifications', JSON.stringify(notifications)); }
 
-function addNotification(msg){
-  const n={id:Date.now(),msg,time:new Date().toISOString(),read:false};
+function addNotification(msg) {
+  const n = { id: Date.now(), msg, time: new Date().toISOString(), read: false };
   notifications.unshift(n);
-  if(notifications.length>50) notifications=notifications.slice(0,50);
+  if (notifications.length > 50) notifications = notifications.slice(0, 50);
   saveNotifications();
   renderNotifBadge();
   renderNotifPanel();
-  showToast('🔔 '+msg);
+  showToast('🔔 ' + msg);
 }
 
-function renderNotifBadge(){
-  const unread=notifications.filter(n=>!n.read).length;
-  document.getElementById('notif-count').textContent=unread;
-  document.getElementById('notif-sidebar-badge').textContent=unread;
+function renderNotifBadge() {
+  const unread = notifications.filter(n => !n.read).length;
+  document.getElementById('notif-count').textContent = unread;
+  document.getElementById('notif-sidebar-badge').textContent = unread;
 }
 
-function renderNotifPanel(){
-  const list=document.getElementById('notif-list');
-  if(!notifications.length){ list.innerHTML='<div class="notif-empty">No notifications yet</div>'; return; }
-  list.innerHTML=notifications.map(n=>`
+function renderNotifPanel() {
+  const list = document.getElementById('notif-list');
+  if (!notifications.length) { list.innerHTML = '<div class="notif-empty">No notifications yet</div>'; return; }
+  list.innerHTML = notifications.map(n => `
     <div class="notif-item">
-      <span class="notif-dot" style="${n.read?'background:var(--txt3)':''}"></span>
+      <span class="notif-dot" style="${n.read ? 'background:var(--txt3)' : ''}"></span>
       <span>${n.msg}</span>
       <span class="notif-time">${timeAgo(n.time)}</span>
     </div>`).join('');
 }
 
-function renderNotifPage(){
-  const el=document.getElementById('notif-page-list');
-  if(!notifications.length){ el.innerHTML='<div style="text-align:center;color:var(--txt3);padding:40px">No notifications yet</div>'; return; }
-  notifications.forEach(n=>n.read=true);
+function renderNotifPage() {
+  const el = document.getElementById('notif-page-list');
+  if (!notifications.length) { el.innerHTML = '<div style="text-align:center;color:var(--txt3);padding:40px">No notifications yet</div>'; return; }
+  notifications.forEach(n => n.read = true);
   saveNotifications(); renderNotifBadge();
-  el.innerHTML=notifications.map(n=>`
+  el.innerHTML = notifications.map(n => `
     <div class="search-result-item" style="cursor:default">
       <div style="width:36px;height:36px;background:var(--bg4);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px">🔔</div>
       <div class="search-result-info">
@@ -470,60 +503,56 @@ function renderNotifPage(){
     </div>`).join('');
 }
 
-function clearAllNotifications(){ notifications=[]; saveNotifications(); renderNotifBadge(); renderNotifPage(); }
+function clearAllNotifications() { notifications = []; saveNotifications(); renderNotifBadge(); renderNotifPage(); }
 
-function toggleNotifPanel(){
-  const p=document.getElementById('notif-panel');
+function toggleNotifPanel() {
+  const p = document.getElementById('notif-panel');
   p.classList.toggle('open');
-  if(p.classList.contains('open')){
+  if (p.classList.contains('open')) {
     renderNotifPanel();
-    notifications.forEach(n=>n.read=true);
+    notifications.forEach(n => n.read = true);
     saveNotifications(); renderNotifBadge();
   }
 }
-document.addEventListener('click',e=>{
-  if(!e.target.closest('#notif-panel')&&!e.target.closest('#notif-bell-btn'))
+document.addEventListener('click', e => {
+  if (!e.target.closest('#notif-panel') && !e.target.closest('#notif-bell-btn'))
     document.getElementById('notif-panel').classList.remove('open');
 });
 
-function timeAgo(iso){
-  const diff=new Date()-new Date(iso);
-  if(diff<60000) return 'just now';
-  if(diff<3600000) return Math.floor(diff/60000)+'m ago';
-  if(diff<86400000) return Math.floor(diff/3600000)+'h ago';
-  return Math.floor(diff/86400000)+'d ago';
+function timeAgo(iso) {
+  const diff = new Date() - new Date(iso);
+  if (diff < 60000)    return 'just now';
+  if (diff < 3600000)  return Math.floor(diff / 60000) + 'm ago';
+  if (diff < 86400000) return Math.floor(diff / 3600000) + 'h ago';
+  return Math.floor(diff / 86400000) + 'd ago';
 }
 
 /* ════════════════════════════════
    FAVORITES & LIKES
 ════════════════════════════════ */
-function saveFavorites(){ localStorage.setItem('fv_favorites', JSON.stringify(favorites)); }
-function isFavorited(id){ return favorites.includes(String(id)); }
-function toggleFavorite(id){
-  id=String(id);
-  if(favorites.includes(id)) favorites=favorites.filter(f=>f!==id);
+function saveFavorites() { localStorage.setItem('fv_favorites', JSON.stringify(favorites)); }
+function isFavorited(id) { return favorites.includes(String(id)); }
+function toggleFavorite(id) {
+  id = String(id);
+  if (favorites.includes(id)) favorites = favorites.filter(f => f !== id);
   else favorites.push(id);
   saveFavorites(); return favorites.includes(id);
 }
-function saveLikes(){ localStorage.setItem('fv_likes', JSON.stringify(likes)); }
-function isLiked(id){ return likes.includes(String(id)); }
+function saveLikes() { localStorage.setItem('fv_likes', JSON.stringify(likes)); }
+function isLiked(id) { return likes.includes(String(id)); }
 
 /* ════════════════════════════════
    COMMENT SYSTEM
-   — API se load karo, fail hone par localStorage se
-   — Post hone par turant screen pe dikhao
 ════════════════════════════════ */
-
-/* localStorage mein comments store karte hain per-mediaId */
-function getLocalComments(mediaId){
-  try{ return JSON.parse(localStorage.getItem('cmts_'+mediaId)||'[]'); }
-  catch{ return []; }
+function getLocalComments(mediaId) {
+  try { return JSON.parse(localStorage.getItem('cmts_' + mediaId) || '[]'); }
+  catch { return []; }
 }
-function saveLocalComments(mediaId, arr){
-  try{ localStorage.setItem('cmts_'+mediaId, JSON.stringify(arr)); } catch{}
+function saveLocalComments(mediaId, arr) {
+  try { localStorage.setItem('cmts_' + mediaId, JSON.stringify(arr)); } catch {}
 }
 
-function openCommentModal(mediaId, imgUrl){
+function openCommentModal(mediaId, imgUrl) {
   currentMediaId = mediaId;
   const overlay = document.getElementById('comment-modal-overlay');
   const photo   = document.getElementById('comment-modal-photo');
@@ -533,20 +562,19 @@ function openCommentModal(mediaId, imgUrl){
   loadComments(mediaId);
 }
 
-function closeCommentModal(){
+function closeCommentModal() {
   document.getElementById('comment-modal-overlay').classList.remove('open');
   document.body.style.overflow = '';
   currentMediaId = null;
 }
 
-document.getElementById('comment-modal-overlay').addEventListener('click', function(e){
-  if(e.target === this) closeCommentModal();
+document.getElementById('comment-modal-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeCommentModal();
 });
 
-/* ── renderCommentList: array se DOM banao ── */
-function renderCommentList(comments){
+function renderCommentList(comments) {
   const list = document.getElementById('comment-list');
-  if(!comments.length){
+  if (!comments.length) {
     list.innerHTML = `<div class="comment-empty">
       <i class="fa-regular fa-comment-dots"></i>
       No comments yet. Be the first!
@@ -557,40 +585,32 @@ function renderCommentList(comments){
   list.scrollTop = list.scrollHeight;
 }
 
-/* ── loadComments: API try karo, warna localStorage ── */
-async function loadComments(mediaId){
+async function loadComments(mediaId) {
   const list = document.getElementById('comment-list');
   list.innerHTML = '<div class="comment-empty"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</div>';
-
-  try{
+  try {
     const res  = await fetch(`${API}/social/comments/${mediaId}`);
-    if(!res.ok) throw new Error('api fail');
+    if (!res.ok) throw new Error('api fail');
     const data = await res.json();
     const serverComments = data.comments || [];
-    /* Merge: server comments + local-only ones (jo API pe nahi hain) */
-    const localOnly = getLocalComments(mediaId).filter(lc=>lc._localOnly);
+    const localOnly = getLocalComments(mediaId).filter(lc => lc._localOnly);
     const merged = [...serverComments, ...localOnly];
-    /* Update localStorage with merged */
     saveLocalComments(mediaId, merged);
     renderCommentList(merged);
-      // Count update
-      const countEl = document.getElementById(`cmt-count-${mediaId}`);
-        if(countEl) countEl.textContent = merged.length;
+    const countEl = document.getElementById(`cmt-count-${mediaId}`);
+    if (countEl) countEl.textContent = merged.length;
   } catch {
-    /* API nahi chali — sirf localStorage se dikhao */
     const local = getLocalComments(mediaId);
     renderCommentList(local);
   }
-
 }
 
-function commentHTML(c){
-  const initials = (c.user?.name || 'U').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+function commentHTML(c) {
+  const initials = (c.user?.name || 'U').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
   const myId = currentUserId || 'me';
   const isOwner = String(c.user?._id) === String(myId) || c._localOwner === true;
   const colors = ['#7c3aed','#059669','#1e40af','#b45309','#9d174d','#0e7490'];
-  const color  = colors[(initials.charCodeAt(0)||0) % colors.length];
-
+  const color  = colors[(initials.charCodeAt(0) || 0) % colors.length];
   return `
     <div class="comment-item" id="cmt-${c._id}">
       <div class="comment-avatar" style="background:${color}">${initials}</div>
@@ -605,47 +625,39 @@ function commentHTML(c){
     </div>`;
 }
 
-function escHtml(str){
+function escHtml(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-/* ── postComment: API try karo, turant local mein bhi dikhao ── */
-async function postComment(){
+async function postComment() {
   const input = document.getElementById('comment-input');
   const text  = input.value.trim();
-  if(!text){ showToast('Comment likhna zaroori hai','error'); return; }
-
+  if (!text) { showToast('Comment likhna zaroori hai', 'error'); return; }
   const btn = document.querySelector('.comment-post-btn');
   btn.disabled = true; btn.textContent = '...';
-
-  input.value = ''; // pehle clear karo
-
+  input.value = '';
   const token = localStorage.getItem('token');
-  try{
-    if(token){
-      const res = await fetch(`${API}/social/comment/${currentMediaId}`,{
-        method:'POST',
-        headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`},
-        body: JSON.stringify({text})
+  try {
+    if (token) {
+      const res = await fetch(`${API}/social/comment/${currentMediaId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ text })
       });
-      if(res.ok){
-        // Sirf server se reload karo — local mat dikhao
+      if (res.ok) {
         await loadComments(currentMediaId);
         showToast('Comment posted!');
       }
     } else {
-      // Sirf local mein dikhao agar login nahi
       const userName = document.getElementById('user-name').textContent || 'You';
       const newComment = {
         _id: 'local-' + Date.now(),
         user: { _id: currentUserId || 'me', name: userName },
-        text,
-        createdAt: new Date().toISOString(),
-        _localOnly: true,
-        _localOwner: true
+        text, createdAt: new Date().toISOString(),
+        _localOnly: true, _localOwner: true
       };
       const existing = getLocalComments(currentMediaId);
-      const updated = [...existing, newComment];
+      const updated  = [...existing, newComment];
       saveLocalComments(currentMediaId, updated);
       renderCommentList(updated);
       showToast('Comment posted!');
@@ -653,61 +665,49 @@ async function postComment(){
   } catch {
     showToast('Could not post comment', 'error');
   }
-
   btn.disabled = false; btn.textContent = 'Post';
 }
 
-/* ── deleteComment ── */
-async function deleteComment(mediaId, commentId){
-  if(!confirm('Is comment ko delete karein?')) return;
-
-  /* Pehle DOM se hatao */
+async function deleteComment(mediaId, commentId) {
+  if (!confirm('Is comment ko delete karein?')) return;
   const el = document.getElementById(`cmt-${commentId}`);
-  if(el) el.remove();
-
-  /* localStorage se bhi hatao */
-  const updated = getLocalComments(mediaId).filter(c=>c._id!==commentId);
+  if (el) el.remove();
+  const updated = getLocalComments(mediaId).filter(c => c._id !== commentId);
   saveLocalComments(mediaId, updated);
-
-  /* Empty state check */
   const list = document.getElementById('comment-list');
-  if(!list.querySelector('.comment-item')){
-    list.innerHTML = `<div class="comment-empty">
-      <i class="fa-regular fa-comment-dots"></i> No comments yet.</div>`;
+  if (!list.querySelector('.comment-item')) {
+    list.innerHTML = `<div class="comment-empty"><i class="fa-regular fa-comment-dots"></i> No comments yet.</div>`;
   }
-
-  /* API pe bhi try karo */
   const token = localStorage.getItem('token');
-  try{
-    if(token && !commentId.startsWith('local-')){
-      await fetch(`${API}/social/comment/${mediaId}/${commentId}`,{
-        method:'DELETE', headers:{Authorization:`Bearer ${token}`}
+  try {
+    if (token && !commentId.startsWith('local-')) {
+      await fetch(`${API}/social/comment/${mediaId}/${commentId}`, {
+        method: 'DELETE', headers: { Authorization: `Bearer ${token}` }
       });
     }
-  } catch{}
-
+  } catch {}
   showToast('Comment delete ho gaya');
 }
 
 /* ════════════════════════════════
    EVENTS
 ════════════════════════════════ */
-const CAT_EMOJIS={cultural_fest:'🎭',competition:'💻',trip:'🏔️',sports:'🏆',party:'🎉',workshop:'📷',photoshoot:'📸',other:'📁'};
-const CAT_CSS   ={cultural_fest:'cat-cultural',competition:'cat-competition',trip:'cat-trip',sports:'cat-sports',party:'cat-party',workshop:'cat-workshop',photoshoot:'cat-photoshoot',other:'cat-other'};
+const CAT_EMOJIS = { cultural_fest:'🎭', competition:'💻', trip:'🏔️', sports:'🏆', party:'🎉', workshop:'📷', photoshoot:'📸', other:'📁' };
+const CAT_CSS    = { cultural_fest:'cat-cultural', competition:'cat-competition', trip:'cat-trip', sports:'cat-sports', party:'cat-party', workshop:'cat-workshop', photoshoot:'cat-photoshoot', other:'cat-other' };
 
-function eventCardHTML(e){
-  const emoji=CAT_EMOJIS[e.category]||'📁';
-  const catClass=CAT_CSS[e.category]||'cat-other';
-  const d=new Date(e.date);
-  const dateStr=d.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
-  const isUpcoming=d>new Date();
-  const colors=['#7c3aed','#059669','#1e40af','#b45309','#9d174d','#374151'];
-  const memberDots=[0,1,2].map(i=>`<div class="member-dot" style="background:${colors[i%colors.length]}">${String.fromCharCode(65+i)}</div>`).join('');
+function eventCardHTML(e) {
+  const emoji    = CAT_EMOJIS[e.category] || '📁';
+  const catClass = CAT_CSS[e.category]    || 'cat-other';
+  const d        = new Date(e.date);
+  const dateStr  = d.toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
+  const isUpcoming = d > new Date();
+  const colors   = ['#7c3aed','#059669','#1e40af','#b45309','#9d174d','#374151'];
+  const memberDots = [0,1,2].map(i => `<div class="member-dot" style="background:${colors[i % colors.length]}">${String.fromCharCode(65+i)}</div>`).join('');
   return `
     <div class="event-card" onclick="openEventDetail('${e._id}')">
       <div class="event-thumb ${catClass}">
         ${emoji}
-        ${!e.isPublic?'<div class="lock-icon">🔒</div>':''}
+        ${!e.isPublic ? '<div class="lock-icon">🔒</div>' : ''}
         <div class="event-cat-tag">${(e.category||'other').replace('_',' ')}</div>
       </div>
       <div class="event-body">
@@ -715,7 +715,7 @@ function eventCardHTML(e){
         <div class="event-meta-row">
           <i class="fa-solid fa-calendar-days"></i>
           ${dateStr}
-          <span class="event-status ${isUpcoming?'status-upcoming':'status-completed'}">${isUpcoming?'Upcoming':'Completed'}</span>
+          <span class="event-status ${isUpcoming ? 'status-upcoming' : 'status-completed'}">${isUpcoming ? 'Upcoming' : 'Completed'}</span>
         </div>
         <div class="event-footer-row">
           <div class="event-photos"><i class="fa-solid fa-camera"></i> ${e.mediaCount||0} photos</div>
@@ -725,26 +725,26 @@ function eventCardHTML(e){
     </div>`;
 }
 
-async function loadDashboardEvents(){
-  try{
-    const res=await fetch(`${API}/events`);
-    const data=await res.json();
-    allEvents=data.events||[];
-    document.getElementById('stat-events').textContent=allEvents.length;
-    document.getElementById('events-count-badge').textContent=allEvents.length+' total';
-    document.getElementById('stat-events-sub').textContent=`${Math.min(2,allEvents.length)} this month`;
-    const grid=document.getElementById('dashboard-events-grid');
-    if(!allEvents.length){ grid.innerHTML='<p style="color:var(--txt3);grid-column:1/-1;padding:40px;text-align:center">No events yet. Create your first event!</p>'; return; }
-    grid.innerHTML=allEvents.slice(0,6).map(eventCardHTML).join('');
+async function loadDashboardEvents() {
+  try {
+    const res  = await fetch(`${API}/events`);
+    const data = await res.json();
+    allEvents  = data.events || [];
+    document.getElementById('stat-events').textContent      = allEvents.length;
+    document.getElementById('events-count-badge').textContent = allEvents.length + ' total';
+    document.getElementById('stat-events-sub').textContent  = `${Math.min(2, allEvents.length)} this month`;
+    const grid = document.getElementById('dashboard-events-grid');
+    if (!allEvents.length) { grid.innerHTML = '<p style="color:var(--txt3);grid-column:1/-1;padding:40px;text-align:center">No events yet. Create your first event!</p>'; return; }
+    grid.innerHTML = allEvents.slice(0, 6).map(eventCardHTML).join('');
     loadMediaStats(allEvents);
   } catch {
-    document.getElementById('dashboard-events-grid').innerHTML=`<p style="color:var(--txt3);font-size:13px;grid-column:1/-1;padding:20px;text-align:center">⚠️ Cannot connect to backend. Showing demo data.</p>`;
+    document.getElementById('dashboard-events-grid').innerHTML = `<p style="color:var(--txt3);font-size:13px;grid-column:1/-1;padding:20px;text-align:center">⚠️ Cannot connect to backend. Showing demo data.</p>`;
     loadDemoData();
   }
 }
 
-function loadDemoData(){
-  const demos=[
+function loadDemoData() {
+  const demos = [
     {_id:'demo1',name:'Annual Cultural Fest',category:'cultural_fest',date:'2025-12-15',isPublic:true,mediaCount:247},
     {_id:'demo2',name:'Tech Hackathon 2025',category:'competition',date:'2025-11-30',isPublic:true,mediaCount:134},
     {_id:'demo3',name:'Winter Photography Trip',category:'trip',date:'2026-01-12',isPublic:false,mediaCount:89},
@@ -752,22 +752,22 @@ function loadDemoData(){
     {_id:'demo5',name:'Freshers Welcome Party',category:'party',date:'2025-08-20',isPublic:true,mediaCount:318},
     {_id:'demo6',name:'Photography Workshop',category:'workshop',date:'2026-03-08',isPublic:false,mediaCount:45},
   ];
-  allEvents=demos;
-  document.getElementById('stat-events').textContent=demos.length;
-  document.getElementById('events-count-badge').textContent=demos.length+' total';
-  document.getElementById('stat-events-sub').textContent='2 this month';
-  document.getElementById('stat-media').textContent='1,025';
-  document.getElementById('stat-media-sub').textContent='247 this week';
-  document.getElementById('stat-likes').textContent='4,891';
-  document.getElementById('stat-likes-sub').textContent='12% vs last month';
-  document.getElementById('stat-downloads').textContent='738';
-  document.getElementById('dashboard-events-grid').innerHTML=demos.map(eventCardHTML).join('');
-  document.getElementById('my-photos-badge').textContent=12;
-  allMedia=generateDemoMedia();
+  allEvents = demos;
+  document.getElementById('stat-events').textContent       = demos.length;
+  document.getElementById('events-count-badge').textContent = demos.length + ' total';
+  document.getElementById('stat-events-sub').textContent   = '2 this month';
+  document.getElementById('stat-media').textContent        = '1,025';
+  document.getElementById('stat-media-sub').textContent    = '247 this week';
+  document.getElementById('stat-likes').textContent        = '4,891';
+  document.getElementById('stat-likes-sub').textContent    = '12% vs last month';
+  document.getElementById('stat-downloads').textContent    = '738';
+  document.getElementById('dashboard-events-grid').innerHTML = demos.map(eventCardHTML).join('');
+  document.getElementById('my-photos-badge').textContent   = 12;
+  allMedia = generateDemoMedia();
 }
 
-function generateDemoMedia(){
-  return[
+function generateDemoMedia() {
+  return [
     {_id:'m1',url:'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=400',aiTags:['crowd','stage','lights'],likes:[],eventName:'Annual Cultural Fest',uploadedBy:{name:'Komal S'}},
     {_id:'m2',url:'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400',aiTags:['workshop','camera','indoor'],likes:[],eventName:'Photography Workshop',uploadedBy:{name:'Rahul M'}},
     {_id:'m3',url:'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=400',aiTags:['party','celebration','dance'],likes:[],eventName:'Freshers Party',uploadedBy:{name:'Priya K'}},
@@ -777,58 +777,86 @@ function generateDemoMedia(){
   ];
 }
 
-async function loadMediaStats(events){
-  let totalMedia=0, totalLikes=0;
-  for(const e of events.slice(0,3)){
-    try{
-      const res=await fetch(`${API}/media/event/${e._id}`);
-      const data=await res.json();
-      if(data.media){ totalMedia+=data.media.length; totalLikes+=data.media.reduce((s,m)=>s+(m.likes?.length||0),0); allMedia=[...allMedia,...data.media.map(m=>({...m,eventName:e.name}))]; }
-    } catch{}
+async function loadMediaStats(events) {
+  let totalMedia = 0, totalLikes = 0;
+  for (const e of events.slice(0, 3)) {
+    try {
+      const res  = await fetch(`${API}/media/event/${e._id}`);
+      const data = await res.json();
+      if (data.media) {
+        totalMedia += data.media.length;
+        totalLikes += data.media.reduce((s, m) => s + (m.likes?.length || 0), 0);
+        allMedia = [...allMedia, ...data.media.map(m => ({...m, eventName: e.name}))];
+      }
+    } catch {}
   }
-  if(totalMedia>0){ document.getElementById('stat-media').textContent=totalMedia; document.getElementById('stat-likes').textContent=totalLikes; }
+  if (totalMedia > 0) {
+    document.getElementById('stat-media').textContent = totalMedia;
+    document.getElementById('stat-likes').textContent = totalLikes;
+  }
 }
 
 /* ════════════════════════════════
-   ALL EVENTS PAGE
+   FEATURE 1 — ALL EVENTS + SORT
 ════════════════════════════════ */
-async function loadAllEvents(){
-  document.getElementById('all-events-grid').innerHTML='<div style="text-align:center;color:var(--txt3);grid-column:1/-1;padding:40px">Loading...</div>';
-  try{ const res=await fetch(`${API}/events`); const data=await res.json(); allEvents=data.events||[]; } catch{}
-  const grid=document.getElementById('all-events-grid');
-  document.getElementById('all-events-count').textContent=allEvents.length+' total';
-  if(!allEvents.length){ grid.innerHTML='<p style="color:var(--txt3);grid-column:1/-1;padding:40px;text-align:center">No events yet</p>'; return; }
-  grid.innerHTML=allEvents.map(eventCardHTML).join('');
+async function loadAllEvents() {
+  document.getElementById('all-events-grid').innerHTML =
+    '<div style="text-align:center;color:var(--txt3);grid-column:1/-1;padding:40px">Loading...</div>';
+  try {
+    const res  = await fetch(`${API}/events`);
+    const data = await res.json();
+    allEvents  = data.events || [];
+  } catch {}
+  document.getElementById('all-events-count').textContent = allEvents.length + ' total';
+  sortAndRenderEvents();
+}
+
+function sortAndRenderEvents() {
+  const by     = document.getElementById('sort-by')?.value || 'date_desc';
+  const sorted = [...allEvents].sort((a, b) => {
+    if (by === 'date_desc') return new Date(b.date) - new Date(a.date);
+    if (by === 'date_asc')  return new Date(a.date) - new Date(b.date);
+    if (by === 'name_asc')  return a.name.localeCompare(b.name);
+    if (by === 'name_desc') return b.name.localeCompare(a.name);
+    if (by === 'category')  return (a.category || '').localeCompare(b.category || '');
+    return 0;
+  });
+  const grid = document.getElementById('all-events-grid');
+  if (!sorted.length) {
+    grid.innerHTML = '<p style="color:var(--txt3);grid-column:1/-1;padding:40px;text-align:center">No events yet</p>';
+    return;
+  }
+  grid.innerHTML = sorted.map(eventCardHTML).join('');
 }
 
 /* ════════════════════════════════
    EVENT DETAIL
 ════════════════════════════════ */
-function openEventDetail(id){
-  const ev=allEvents.find(e=>e._id===id);
-  if(!ev) return;
-  navigateTo('event-detail',ev);
+function openEventDetail(id) {
+  const ev = allEvents.find(e => e._id === id);
+  if (!ev) return;
+  navigateTo('event-detail', ev);
 }
 
-async function loadEventDetail(ev){
-  const emoji=CAT_EMOJIS[ev.category]||'📁';
-  const catClass=CAT_CSS[ev.category]||'cat-other';
-  const d=new Date(ev.date);
-  const dateStr=d.toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'});
-  const isUpcoming=d>new Date();
+async function loadEventDetail(ev) {
+  const emoji    = CAT_EMOJIS[ev.category] || '📁';
+  const catClass = CAT_CSS[ev.category]    || 'cat-other';
+  const d        = new Date(ev.date);
+  const dateStr  = d.toLocaleDateString('en-IN', { day:'numeric', month:'long', year:'numeric' });
+  const isUpcoming = d > new Date();
 
-  document.getElementById('event-detail-content').innerHTML=`
+  document.getElementById('event-detail-content').innerHTML = `
     <div class="event-detail-header">
       <div class="event-detail-thumb ${catClass}" style="font-size:40px">${emoji}</div>
       <div class="event-detail-info">
         <h1>${ev.name}</h1>
         <div class="meta-chips">
           <span class="chip"><i class="fa-solid fa-calendar"></i> ${dateStr}</span>
-          <span class="chip event-status ${isUpcoming?'status-upcoming':'status-completed'}">${isUpcoming?'Upcoming':'Completed'}</span>
-          <span class="chip"><i class="fa-solid fa-${ev.isPublic?'globe':'lock'}"></i> ${ev.isPublic?'Public':'Private'}</span>
+          <span class="chip event-status ${isUpcoming ? 'status-upcoming' : 'status-completed'}">${isUpcoming ? 'Upcoming' : 'Completed'}</span>
+          <span class="chip"><i class="fa-solid fa-${ev.isPublic ? 'globe' : 'lock'}"></i> ${ev.isPublic ? 'Public' : 'Private'}</span>
           <span class="chip"><i class="fa-solid fa-images"></i> ${ev.mediaCount||0} photos</span>
         </div>
-        <p class="event-detail-desc">${ev.description||'No description available.'}</p>
+        <p class="event-detail-desc">${ev.description || 'No description available.'}</p>
       </div>
     </div>
     <div class="sec-hd"><h2>Event Photos</h2><div class="sec-count" id="detail-media-count">Loading...</div></div>
@@ -838,18 +866,18 @@ async function loadEventDetail(ev){
       </div>
     </div>`;
 
-  try{
-    const res=await fetch(`${API}/media/event/${ev._id}`);
-    const data=await res.json();
-    const media=data.media||[];
-    document.getElementById('detail-media-count').textContent=media.length+' photos';
-    if(!media.length){ document.getElementById('detail-media-grid').innerHTML='<p style="color:var(--txt3);grid-column:1/-1;padding:30px;text-align:center">No photos yet for this event</p>'; return; }
-    document.getElementById('detail-media-grid').innerHTML=media.map(m=>mediaItemHTML(m)).join('');
+  try {
+    const res  = await fetch(`${API}/media/event/${ev._id}`);
+    const data = await res.json();
+    const media = data.media || [];
+    document.getElementById('detail-media-count').textContent = media.length + ' photos';
+    if (!media.length) { document.getElementById('detail-media-grid').innerHTML = '<p style="color:var(--txt3);grid-column:1/-1;padding:30px;text-align:center">No photos yet for this event</p>'; return; }
+    document.getElementById('detail-media-grid').innerHTML = media.map(m => mediaItemHTML(m)).join('');
     attachMediaEvents();
   } catch {
-    const demoMedia=generateDemoMedia().slice(0,4).map(m=>({...m,eventName:ev.name}));
-    document.getElementById('detail-media-count').textContent=demoMedia.length+' photos (demo)';
-    document.getElementById('detail-media-grid').innerHTML=demoMedia.map(m=>mediaItemHTML(m)).join('');
+    const demoMedia = generateDemoMedia().slice(0, 4).map(m => ({...m, eventName: ev.name}));
+    document.getElementById('detail-media-count').textContent = demoMedia.length + ' photos (demo)';
+    document.getElementById('detail-media-grid').innerHTML = demoMedia.map(m => mediaItemHTML(m)).join('');
     attachMediaEvents();
   }
 }
@@ -857,25 +885,25 @@ async function loadEventDetail(ev){
 /* ════════════════════════════════
    MEDIA ITEM HTML
 ════════════════════════════════ */
-function mediaItemHTML(m){
-  const rawUrl = m.url || m.fileUrl || '';
-  const fixedUrl = rawUrl.replaceAll('\\','/');
-  const imgUrl = fixedUrl.startsWith('http') ? fixedUrl : `https://event-and-media-management-paltform1.onrender.com/${fixedUrl.replace(/^\/+/,'')}`;
-  const faved  = isFavorited(m._id);
-  const liked  = isLiked(m._id);
-  const tags   = (m.aiTags||[]).slice(0,4).map(t=>`<span class="tag-chip">#${t}</span>`).join('');
+function mediaItemHTML(m) {
+  const rawUrl   = m.url || m.fileUrl || '';
+  const fixedUrl = rawUrl.replaceAll('\\', '/');
+  const imgUrl   = fixedUrl.startsWith('http') ? fixedUrl : `https://event-and-media-management-paltform1.onrender.com/${fixedUrl.replace(/^\/+/, '')}`;
+  const faved    = isFavorited(m._id);
+  const liked    = isLiked(m._id);
+  const tags     = (m.aiTags || []).slice(0, 4).map(t => `<span class="tag-chip">#${t}</span>`).join('');
   const commentCount = m.comments?.length || 0;
 
   return `
-  <div class="media-item" data-id="${m._id}">
+  <div class="media-item" data-id="${m._id}" data-event="${escHtml(m.eventName || 'Event')}">
     <img src="${imgUrl}" alt="photo"
       onerror="this.src='https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=400'">
     <div class="media-item-actions">
-      <button class="like-btn-small ${liked?'liked':''}" data-id="${m._id}">
-        ❤️ <span class="like-count">${m.likes?.length||0}</span>
+      <button class="like-btn-small ${liked ? 'liked' : ''}" data-id="${m._id}">
+        ❤️ <span class="like-count">${m.likes?.length || 0}</span>
       </button>
-      <button class="fav-btn-small ${faved?'favorited':''}" data-id="${m._id}" title="Favourite">
-        <i class="fa-${faved?'solid':'regular'} fa-star"></i>
+      <button class="fav-btn-small ${faved ? 'favorited' : ''}" data-id="${m._id}" title="Favourite">
+        <i class="fa-${faved ? 'solid' : 'regular'} fa-star"></i>
       </button>
       <button class="comment-btn-small" data-id="${m._id}" data-url="${imgUrl}" title="Comments">
         <span class="comment-emoji">💬</span>
@@ -884,82 +912,149 @@ function mediaItemHTML(m){
       <button class="download-btn-small" data-url="${imgUrl}" title="Download">⬇️</button>
       <button class="share-btn-small" data-url="${imgUrl}" title="Copy link">🔗</button>
     </div>
-    ${tags?`<div class="ai-tags-mini">${tags}</div>`:''}
+    ${tags ? `<div class="ai-tags-mini">${tags}</div>` : ''}
   </div>`;
+}
+
+/* ════════════════════════════════
+   FEATURE 3 — WATERMARK DOWNLOAD
+════════════════════════════════ */
+async function downloadWithWatermark(imgUrl, eventName) {
+  try {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    /* Add cache-bust to help with CORS headers */
+    img.src = imgUrl + (imgUrl.includes('?') ? '&' : '?') + '_cb=' + Date.now();
+
+    await new Promise((res, rej) => {
+      img.onload  = res;
+      img.onerror = rej;
+    });
+
+    const canvas  = document.createElement('canvas');
+    canvas.width  = img.naturalWidth  || 1200;
+    canvas.height = img.naturalHeight || 800;
+    const ctx = canvas.getContext('2d');
+
+    /* Draw original image */
+    ctx.drawImage(img, 0, 0);
+
+    /* — Diagonal tiled watermark — */
+    const fontSize = Math.max(14, Math.floor(canvas.width * 0.022));
+    ctx.save();
+    ctx.globalAlpha = 0.18;
+    ctx.fillStyle   = '#ffffff';
+    ctx.font        = `${fontSize}px sans-serif`;
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.rotate(-Math.PI / 6);
+    const wmText = `EventMedia • ${eventName} • ${window.currentRole || 'Member'}`;
+    const stepX  = ctx.measureText(wmText).width + 60;
+    const stepY  = fontSize * 3;
+    for (let y = -canvas.height; y < canvas.height * 1.5; y += stepY) {
+      for (let x = -canvas.width; x < canvas.width * 1.5; x += stepX) {
+        ctx.fillText(wmText, x, y);
+      }
+    }
+    ctx.restore();
+
+    /* — Bottom-right corner stamp — */
+    const stamp     = `EventMedia • ${eventName} • ${new Date().getFullYear()}`;
+    const stampSize = Math.max(12, Math.floor(canvas.width * 0.018));
+    ctx.font        = `bold ${stampSize}px sans-serif`;
+    ctx.fillStyle   = 'rgba(255,255,255,0.8)';
+    ctx.textAlign   = 'right';
+    ctx.fillText(stamp, canvas.width - 16, canvas.height - 16);
+
+    /* Trigger download */
+    const a    = document.createElement('a');
+    a.href     = canvas.toDataURL('image/jpeg', 0.92);
+    a.download = `${(eventName || 'EventMedia').replace(/\s+/g,'-')}-EventMedia.jpg`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast('⬇️ Downloaded with watermark!');
+
+  } catch (err) {
+    console.warn('Watermark failed, falling back:', err);
+    /* Fallback: direct download without watermark (CORS restriction) */
+    const a = document.createElement('a');
+    a.href = imgUrl; a.download = ''; a.target = '_blank';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    showToast('⬇️ Download started (no watermark — CORS issue)');
+  }
 }
 
 /* ════════════════════════════════
    ATTACH MEDIA EVENTS
 ════════════════════════════════ */
-function attachMediaEvents(){
+function attachMediaEvents() {
   /* Like */
-  document.querySelectorAll('.like-btn-small').forEach(btn=>{
-    btn.addEventListener('click',async()=>{
-      const id=btn.dataset.id;
-      const token=localStorage.getItem('token');
-      if(!token){ showToast('Please login to like photos','error'); return; }
-      try{
-        const res=await fetch(`${API}/social/like/${id}`,{method:'POST',headers:{Authorization:`Bearer ${token}`}});
-        const data=await res.json();
-        const cnt=btn.querySelector('.like-count');
-        btn.classList.toggle('liked',data.liked);
-        cnt.textContent=data.likes??data.count;
-        if(data.liked){ likes.push(id);  }
-        else likes=likes.filter(l=>l!==id);
+  document.querySelectorAll('.like-btn-small').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id    = btn.dataset.id;
+      const token = localStorage.getItem('token');
+      if (!token) { showToast('Please login to like photos', 'error'); return; }
+      try {
+        const res  = await fetch(`${API}/social/like/${id}`, { method:'POST', headers:{ Authorization:`Bearer ${token}` } });
+        const data = await res.json();
+        const cnt  = btn.querySelector('.like-count');
+        btn.classList.toggle('liked', data.liked);
+        cnt.textContent = data.likes ?? data.count;
+        if (data.liked) { likes.push(id); } else likes = likes.filter(l => l !== id);
         saveLikes();
       } catch {
-        if(isLiked(id)){ likes=likes.filter(l=>l!==String(id)); }
-        else{ likes.push(String(id));  }
+        if (isLiked(id)) { likes = likes.filter(l => l !== String(id)); }
+        else { likes.push(String(id)); }
         saveLikes();
-        btn.classList.toggle('liked',isLiked(id));
-        const cnt=btn.querySelector('.like-count');
-        cnt.textContent=parseInt(cnt.textContent)+(isLiked(id)?1:-1);
+        btn.classList.toggle('liked', isLiked(id));
+        const cnt = btn.querySelector('.like-count');
+        cnt.textContent = parseInt(cnt.textContent) + (isLiked(id) ? 1 : -1);
       }
     });
   });
 
   /* Favourite */
-  document.querySelectorAll('.fav-btn-small').forEach(btn=>{
-    btn.addEventListener('click',async()=>{
-      const id=btn.dataset.id;
-      const token=localStorage.getItem('token');
-      if(!token){ showToast('Please login to favourite photos','error'); return; }
-      const faved=toggleFavorite(id);
-      btn.classList.toggle('favorited',faved);
-      const icon=btn.querySelector('i');
-      if(icon) icon.className=`fa-${faved?'solid':'regular'} fa-star`;
-      try{
-        await fetch(`${API}/social/favorite/${id}`,{method:'POST',headers:{Authorization:`Bearer ${token}`}});
-      } catch{}
-      showToast(faved?'⭐ Added to favourites!':'Removed from favourites');
+  document.querySelectorAll('.fav-btn-small').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id    = btn.dataset.id;
+      const token = localStorage.getItem('token');
+      if (!token) { showToast('Please login to favourite photos', 'error'); return; }
+      const faved = toggleFavorite(id);
+      btn.classList.toggle('favorited', faved);
+      const icon = btn.querySelector('i');
+      if (icon) icon.className = `fa-${faved ? 'solid' : 'regular'} fa-star`;
+      try {
+        await fetch(`${API}/social/favorite/${id}`, { method:'POST', headers:{ Authorization:`Bearer ${token}` } });
+      } catch {}
+      showToast(faved ? '⭐ Added to favourites!' : 'Removed from favourites');
     });
   });
 
-  /* Comment button — open modal */
-  document.querySelectorAll('.comment-btn-small').forEach(btn=>{
-    btn.addEventListener('click', e=>{
+  /* Comment — open modal */
+  document.querySelectorAll('.comment-btn-small').forEach(btn => {
+    btn.addEventListener('click', e => {
       e.stopPropagation();
-      const id  = btn.dataset.id;
-      const url = btn.dataset.url;
-      openCommentModal(id, url);
+      openCommentModal(btn.dataset.id, btn.dataset.url);
     });
   });
 
-  /* Download */
-  document.querySelectorAll('.download-btn-small').forEach(btn=>{
-    btn.addEventListener('click',()=>{
-      let url=btn.dataset.url.replaceAll('\\','/');
-      if(!url.startsWith('http')) url='https://event-and-media-management-paltform1.onrender.com/'+url;
-      const a=document.createElement('a'); a.href=url; a.download=''; a.target='_blank';
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      showToast('⬇️ Download started!');
+  /* ✅ FEATURE 3: Download with watermark */
+  document.querySelectorAll('.download-btn-small').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const rawUrl    = btn.dataset.url.replaceAll('\\', '/');
+      const mediaItem = btn.closest('.media-item');
+      const eventName = mediaItem?.dataset.event || 'EventMedia';
+      showToast('⏳ Preparing download...');
+      await downloadWithWatermark(rawUrl, eventName);
     });
   });
 
   /* Share */
-  document.querySelectorAll('.share-btn-small').forEach(btn=>{
-    btn.addEventListener('click',()=>{
-      navigator.clipboard.writeText(btn.dataset.url).then(()=>showToast('🔗 Link copied!')).catch(()=>showToast('Could not copy','error'));
+  document.querySelectorAll('.share-btn-small').forEach(btn => {
+    btn.addEventListener('click', () => {
+      navigator.clipboard.writeText(btn.dataset.url)
+        .then(() => showToast('🔗 Link copied!'))
+        .catch(() => showToast('Could not copy', 'error'));
     });
   });
 }
@@ -967,90 +1062,107 @@ function attachMediaEvents(){
 /* ════════════════════════════════
    GALLERY
 ════════════════════════════════ */
-async function loadGallery(){
-  const grid=document.getElementById('gallery-grid');
-  grid.innerHTML='<div style="text-align:center;color:var(--txt3);grid-column:1/-1;padding:40px">Loading...</div>';
-  allMedia=[];
-  try{
-    const res=await fetch(`${API}/events`); const data=await res.json();
-    for(const ev of(data.events||[]).slice(0,10)){
-      try{
-        const mres=await fetch(`${API}/media/event/${ev._id}`);
-        const mdata=await mres.json();
-        allMedia=[...allMedia,...(mdata.media||[]).map(m=>({...m,eventName:ev.name}))];
-      } catch{}
+async function loadGallery() {
+  const grid = document.getElementById('gallery-grid');
+  grid.innerHTML = '<div style="text-align:center;color:var(--txt3);grid-column:1/-1;padding:40px">Loading...</div>';
+  allMedia = [];
+  try {
+    const res  = await fetch(`${API}/events`);
+    const data = await res.json();
+    for (const ev of (data.events || []).slice(0, 10)) {
+      try {
+        const mres  = await fetch(`${API}/media/event/${ev._id}`);
+        const mdata = await mres.json();
+        allMedia = [...allMedia, ...(mdata.media || []).map(m => ({...m, eventName: ev.name}))];
+      } catch {}
     }
-  } catch{ allMedia=generateDemoMedia(); }
+  } catch { allMedia = generateDemoMedia(); }
 
-  // Sirf apni photos
   const myMedia = currentUserId
-    ? allMedia.filter(m=>String(m.uploadedBy?._id)===String(currentUserId))
+    ? allMedia.filter(m => String(m.uploadedBy?._id) === String(currentUserId))
     : allMedia;
 
   renderGallery(myMedia);
-  document.getElementById('gallery-count').textContent=myMedia.length+' items';
+  document.getElementById('gallery-count').textContent = myMedia.length + ' items';
 }
 
-document.getElementById('gallery-search').addEventListener('input',function(){
-  const kw=this.value.toLowerCase();
-  const filtered=allMedia.filter(m=>(m.aiTags||[]).some(t=>t.toLowerCase().includes(kw))||(m.eventName||'').toLowerCase().includes(kw)||(m.uploadedBy?.name||'').toLowerCase().includes(kw));
+document.getElementById('gallery-search').addEventListener('input', function() {
+  const kw = this.value.toLowerCase();
+  const filtered = allMedia.filter(m =>
+    (m.aiTags || []).some(t => t.toLowerCase().includes(kw)) ||
+    (m.eventName || '').toLowerCase().includes(kw) ||
+    (m.uploadedBy?.name || '').toLowerCase().includes(kw)
+  );
   renderGallery(filtered);
 });
 
-function renderGallery(media){
-  const grid=document.getElementById('gallery-grid');
-  if(!media.length){ grid.innerHTML='<p style="color:var(--txt3);grid-column:1/-1;padding:40px;text-align:center">No photos found</p>'; return; }
-  grid.innerHTML=media.map(m=>{
-    const imgUrl=m.url?.startsWith('http')?m.url:`https://event-and-media-management-paltform1.onrender.com${m.url||''}`;
-    const faved=isFavorited(m._id);
+function renderGallery(media) {
+  const grid = document.getElementById('gallery-grid');
+  if (!media.length) { grid.innerHTML = '<p style="color:var(--txt3);grid-column:1/-1;padding:40px;text-align:center">No photos found</p>'; return; }
+  grid.innerHTML = media.map(m => {
+    const imgUrl = m.url?.startsWith('http') ? m.url : `https://event-and-media-management-paltform1.onrender.com${m.url || ''}`;
+    const faved  = isFavorited(m._id);
     return `<div class="photo-card" data-id="${m._id}">
       <img src="${imgUrl}" alt="photo" onerror="this.src='https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=400'">
       <div class="photo-card-footer">
-        <span class="photo-event-name"><i class="fa-solid fa-calendar-days" style="color:var(--acc3)"></i> ${m.eventName||'Event'}</span>
-        <button class="fav-btn-small ${faved?'favorited':''}" data-id="${m._id}">
-          <i class="fa-${faved?'solid':'regular'} fa-star"></i>
+        <span class="photo-event-name"><i class="fa-solid fa-calendar-days" style="color:var(--acc3)"></i> ${m.eventName || 'Event'}</span>
+        <button class="fav-btn-small ${faved ? 'favorited' : ''}" data-id="${m._id}">
+          <i class="fa-${faved ? 'solid' : 'regular'} fa-star"></i>
         </button>
       </div>
     </div>`;
   }).join('');
-  document.querySelectorAll('#gallery-grid .fav-btn-small').forEach(btn=>{
-    btn.addEventListener('click',e=>{ e.stopPropagation(); const id=btn.dataset.id; const faved=toggleFavorite(id); btn.classList.toggle('favorited',faved); const icon=btn.querySelector('i'); if(icon) icon.className=`fa-${faved?'solid':'regular'} fa-star`; showToast(faved?'⭐ Saved to favourites!':'Removed from favourites'); });
+  document.querySelectorAll('#gallery-grid .fav-btn-small').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const id    = btn.dataset.id;
+      const faved = toggleFavorite(id);
+      btn.classList.toggle('favorited', faved);
+      const icon = btn.querySelector('i');
+      if (icon) icon.className = `fa-${faved ? 'solid' : 'regular'} fa-star`;
+      showToast(faved ? '⭐ Saved to favourites!' : 'Removed from favourites');
+    });
   });
 }
 
 /* ════════════════════════════════
    MY PHOTOS
 ════════════════════════════════ */
-async function loadMyPhotos(){
-  if(!allMedia.length){
-    try{
-      const res=await fetch(`${API}/events`); const data=await res.json();
-      for(const ev of(data.events||[]).slice(0,5)){
-        try{ const mres=await fetch(`${API}/media/event/${ev._id}`); const mdata=await mres.json(); allMedia=[...allMedia,...(mdata.media||[]).map(m=>({...m,eventName:ev.name}))]; } catch{}
+async function loadMyPhotos() {
+  if (!allMedia.length) {
+    try {
+      const res  = await fetch(`${API}/events`);
+      const data = await res.json();
+      for (const ev of (data.events || []).slice(0, 5)) {
+        try {
+          const mres  = await fetch(`${API}/media/event/${ev._id}`);
+          const mdata = await mres.json();
+          allMedia = [...allMedia, ...(mdata.media || []).map(m => ({...m, eventName: ev.name}))];
+        } catch {}
       }
-    } catch{ allMedia=generateDemoMedia(); }
+    } catch { allMedia = generateDemoMedia(); }
   }
-  const token=localStorage.getItem('token');
-  let myPhotos=[];
-  if(token){
-    try{
-      const me=await fetch(`${API}/auth/me`,{headers:{Authorization:`Bearer ${token}`}}).then(r=>r.json());
-      currentUserId=me._id;
-      myPhotos=allMedia.filter(m=>m.uploadedBy?._id===me._id||favorites.includes(String(m._id)));
-    } catch{}
+  const token = localStorage.getItem('token');
+  let myPhotos = [];
+  if (token) {
+    try {
+      const me = await fetch(`${API}/auth/me`, { headers:{ Authorization:`Bearer ${token}` } }).then(r => r.json());
+      currentUserId = me._id;
+      myPhotos = allMedia.filter(m => m.uploadedBy?._id === me._id || favorites.includes(String(m._id)));
+    } catch {}
   }
-  if(!myPhotos.length) myPhotos=allMedia.filter(m=>favorites.includes(String(m._id)));
-  if(!myPhotos.length) myPhotos=allMedia.slice(0,6);
-  document.getElementById('myphotos-count').textContent=myPhotos.length+' items';
-  document.getElementById('my-photos-badge').textContent=myPhotos.length;
-  const grid=document.getElementById('myphotos-grid');
-  if(!myPhotos.length){ grid.innerHTML='<p style="color:var(--txt3);grid-column:1/-1;padding:40px;text-align:center">No photos found.</p>'; return; }
-  grid.innerHTML=myPhotos.map(m=>{
-    const imgUrl=m.url?.startsWith('http')?m.url:`https://event-and-media-management-paltform1.onrender.com${m.url||''}`;
+  if (!myPhotos.length) myPhotos = allMedia.filter(m => favorites.includes(String(m._id)));
+  if (!myPhotos.length) myPhotos = allMedia.slice(0, 6);
+  document.getElementById('myphotos-count').textContent   = myPhotos.length + ' items';
+  document.getElementById('my-photos-badge').textContent  = myPhotos.length;
+  const grid = document.getElementById('myphotos-grid');
+  if (!myPhotos.length) { grid.innerHTML = '<p style="color:var(--txt3);grid-column:1/-1;padding:40px;text-align:center">No photos found.</p>'; return; }
+  grid.innerHTML = myPhotos.map(m => {
+    const imgUrl = m.url?.startsWith('http') ? m.url : `https://event-and-media-management-paltform1.onrender.com${m.url || ''}`;
     return `<div class="photo-card">
       <img src="${imgUrl}" alt="photo" onerror="this.src='https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=400'">
       <div class="photo-card-footer">
-        <span class="photo-event-name"><i class="fa-solid fa-calendar-days" style="color:var(--acc3)"></i> ${m.eventName||'Event'}</span>
+        <span class="photo-event-name"><i class="fa-solid fa-calendar-days" style="color:var(--acc3)"></i> ${m.eventName || 'Event'}</span>
         <span style="font-size:11px;color:var(--green)"><i class="fa-solid fa-check"></i> Mine</span>
       </div>
     </div>`;
@@ -1060,43 +1172,48 @@ async function loadMyPhotos(){
 /* ════════════════════════════════
    SMART SEARCH
 ════════════════════════════════ */
-function doSmartSearch(){
-  const kw=document.getElementById('smart-search-input').value.toLowerCase().trim();
-  const res=document.getElementById('smart-search-results');
-  if(!kw){ res.innerHTML='<div style="text-align:center;color:var(--txt3);padding:40px">Type to search...</div>'; return; }
-  const media=allMedia.filter(m=>(m.aiTags||[]).some(t=>t.toLowerCase().includes(kw))||(m.eventName||'').toLowerCase().includes(kw)||(m.uploadedBy?.name||'').toLowerCase().includes(kw));
-  const events=allEvents.filter(e=>e.name.toLowerCase().includes(kw)||(e.category||'').includes(kw));
-  if(!media.length&&!events.length){ res.innerHTML=`<p style="color:var(--txt3);text-align:center;padding:40px">No results for "${kw}"</p>`; return; }
-  res.innerHTML='<div class="search-results">'+
-    events.map(e=>`<div class="search-result-item" onclick="openEventDetail('${e._id}')">
-      <div style="width:50px;height:50px;border-radius:8px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">${CAT_EMOJIS[e.category]||'📁'}</div>
-      <div class="search-result-info"><h4>📅 ${e.name}</h4><p>${e.category} · ${e.mediaCount||0} photos</p></div>
-    </div>`).join('')+
-    media.map(m=>{
-      const imgUrl=m.url?.startsWith('http')?m.url:`https://event-and-media-management-paltform1.onrender.com${m.url||''}`;
+function doSmartSearch() {
+  const kw  = document.getElementById('smart-search-input').value.toLowerCase().trim();
+  const res = document.getElementById('smart-search-results');
+  if (!kw) { res.innerHTML = '<div style="text-align:center;color:var(--txt3);padding:40px">Type to search...</div>'; return; }
+  const media  = allMedia.filter(m => (m.aiTags || []).some(t => t.toLowerCase().includes(kw)) || (m.eventName || '').toLowerCase().includes(kw) || (m.uploadedBy?.name || '').toLowerCase().includes(kw));
+  const events = allEvents.filter(e => e.name.toLowerCase().includes(kw) || (e.category || '').includes(kw));
+  if (!media.length && !events.length) { res.innerHTML = `<p style="color:var(--txt3);text-align:center;padding:40px">No results for "${kw}"</p>`; return; }
+  res.innerHTML = '<div class="search-results">' +
+    events.map(e => `<div class="search-result-item" onclick="openEventDetail('${e._id}')">
+      <div style="width:50px;height:50px;border-radius:8px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">${CAT_EMOJIS[e.category] || '📁'}</div>
+      <div class="search-result-info"><h4>📅 ${e.name}</h4><p>${e.category} · ${e.mediaCount || 0} photos</p></div>
+    </div>`).join('') +
+    media.map(m => {
+      const imgUrl = m.url?.startsWith('http') ? m.url : `https://event-and-media-management-paltform1.onrender.com${m.url || ''}`;
       return `<div class="search-result-item">
         <img class="search-result-img" src="${imgUrl}" onerror="this.src='https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=200'" alt="">
-        <div class="search-result-info"><h4>${m.eventName||'Photo'}</h4><p>${(m.aiTags||[]).map(t=>'#'+t).join(' ')}</p></div>
+        <div class="search-result-info"><h4>${m.eventName || 'Photo'}</h4><p>${(m.aiTags || []).map(t => '#' + t).join(' ')}</p></div>
       </div>`;
-    }).join('')+
+    }).join('') +
   '</div>';
 }
-document.getElementById('global-search').addEventListener('input',function(){
-  if(this.value.trim()){ document.getElementById('smart-search-input').value=this.value; navigateTo('search'); doSmartSearch(); }
+
+document.getElementById('global-search').addEventListener('input', function() {
+  if (this.value.trim()) {
+    document.getElementById('smart-search-input').value = this.value;
+    navigateTo('search');
+    doSmartSearch();
+  }
 });
 
 /* ════════════════════════════════
    ANALYTICS
 ════════════════════════════════ */
-function loadAnalytics(){
-  const cats=[{l:'Cultural Fest',v:35,c:'var(--acc3)'},{l:'Competition',v:20,c:'var(--green)'},{l:'Sports',v:25,c:'var(--acc2)'},{l:'Party',v:40,c:'#ec4899'},{l:'Workshop',v:10,c:'var(--blue)'}];
-  document.getElementById('cat-bars').innerHTML=cats.map(c=>`<div class="bar-row"><div class="bar-label">${c.l}</div><div class="bar-track"><div class="bar-fill" style="width:${c.v*2}%;background:${c.c}"></div></div><div class="bar-val">${c.v}%</div></div>`).join('');
-  const months=['Jan','Feb','Mar','Apr','May','Jun'], vals=[40,55,30,80,65,90];
-  document.getElementById('timeline-bars').innerHTML=months.map((m,i)=>`<div class="bar-row"><div class="bar-label">${m} 2026</div><div class="bar-track"><div class="bar-fill" style="width:${vals[i]}%;background:var(--acc)"></div></div><div class="bar-val">${vals[i]}</div></div>`).join('');
-  const topEvents=allEvents.slice(0,5);
-  const maxMedia=Math.max(...topEvents.map(e=>e.mediaCount||1),1);
-  document.getElementById('top-events-bars').innerHTML=topEvents.map(e=>`<div class="bar-row"><div class="bar-label" style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.name}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round((e.mediaCount||0)/maxMedia*100)}%;background:var(--blue)"></div></div><div class="bar-val">${e.mediaCount||0}</div></div>`).join('')||'<p style="color:var(--txt3);font-size:12px">No events yet</p>';
-  document.getElementById('engagement-bars').innerHTML=`
+function loadAnalytics() {
+  const cats = [{l:'Cultural Fest',v:35,c:'var(--acc3)'},{l:'Competition',v:20,c:'var(--green)'},{l:'Sports',v:25,c:'var(--acc2)'},{l:'Party',v:40,c:'#ec4899'},{l:'Workshop',v:10,c:'var(--blue)'}];
+  document.getElementById('cat-bars').innerHTML = cats.map(c => `<div class="bar-row"><div class="bar-label">${c.l}</div><div class="bar-track"><div class="bar-fill" style="width:${c.v*2}%;background:${c.c}"></div></div><div class="bar-val">${c.v}%</div></div>`).join('');
+  const months = ['Jan','Feb','Mar','Apr','May','Jun'], vals = [40,55,30,80,65,90];
+  document.getElementById('timeline-bars').innerHTML = months.map((m,i) => `<div class="bar-row"><div class="bar-label">${m} 2026</div><div class="bar-track"><div class="bar-fill" style="width:${vals[i]}%;background:var(--acc)"></div></div><div class="bar-val">${vals[i]}</div></div>`).join('');
+  const topEvents = allEvents.slice(0, 5);
+  const maxMedia  = Math.max(...topEvents.map(e => e.mediaCount || 1), 1);
+  document.getElementById('top-events-bars').innerHTML = topEvents.map(e => `<div class="bar-row"><div class="bar-label" style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.name}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round((e.mediaCount||0)/maxMedia*100)}%;background:var(--blue)"></div></div><div class="bar-val">${e.mediaCount||0}</div></div>`).join('') || '<p style="color:var(--txt3);font-size:12px">No events yet</p>';
+  document.getElementById('engagement-bars').innerHTML = `
     <div class="bar-row"><div class="bar-label">Likes</div><div class="bar-track"><div class="bar-fill" style="width:82%;background:var(--acc2)"></div></div><div class="bar-val">4.9K</div></div>
     <div class="bar-row"><div class="bar-label">Comments</div><div class="bar-track"><div class="bar-fill" style="width:45%;background:var(--acc3)"></div></div><div class="bar-val">1.2K</div></div>
     <div class="bar-row"><div class="bar-label">Downloads</div><div class="bar-track"><div class="bar-fill" style="width:33%;background:var(--green)"></div></div><div class="bar-val">738</div></div>
@@ -1106,196 +1223,174 @@ function loadAnalytics(){
 /* ════════════════════════════════
    CREATE EVENT
 ════════════════════════════════ */
-function openCreateEvent(){ document.getElementById('create-event-modal').classList.add('open'); }
-function closeCreateEvent(){ document.getElementById('create-event-modal').classList.remove('open'); document.getElementById('create-msg').textContent=''; }
+function openCreateEvent()  { document.getElementById('create-event-modal').classList.add('open'); }
+function closeCreateEvent() { document.getElementById('create-event-modal').classList.remove('open'); document.getElementById('create-msg').textContent = ''; }
 
-async function createNewEvent(){
-  const name=document.getElementById('ev-name').value.trim();
-  const category=document.getElementById('ev-category').value;
-  const date=document.getElementById('ev-date').value;
-  const desc=document.getElementById('ev-desc').value.trim();
-  const isPublic=document.getElementById('ev-visibility').value==='true';
-  const location=document.getElementById('ev-location').value.trim();
-  const msg=document.getElementById('create-msg');
-  if(!name||!date){ msg.style.color='#f87171'; msg.textContent='⚠️ Event name and date are required'; return; }
-  const token=localStorage.getItem('token');
-  if(!token){ msg.style.color='#f87171'; msg.textContent='⚠️ Please login first'; return; }
-  msg.style.color='var(--txt3)'; msg.textContent='⏳ Creating event...';
-  try{
-    const res=await fetch(`${API}/events`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify({name,category,date,description:desc,isPublic,location})});
-    const data=await res.json();
-    if(res.ok&&data._id){ msg.style.color='var(--green)'; msg.textContent='✅ Event created!'; addNotification(`📅 New event "${name}" created`); allEvents.unshift(data); setTimeout(()=>{ closeCreateEvent(); navigateTo('events'); loadAllEvents(); },1200); }
-    else{ msg.style.color='#f87171'; msg.textContent='❌ '+(data.message||'Failed to create event'); }
+async function createNewEvent() {
+  const name     = document.getElementById('ev-name').value.trim();
+  const category = document.getElementById('ev-category').value;
+  const date     = document.getElementById('ev-date').value;
+  const desc     = document.getElementById('ev-desc').value.trim();
+  const isPublic = document.getElementById('ev-visibility').value === 'true';
+  const location = document.getElementById('ev-location').value.trim();
+  const msg      = document.getElementById('create-msg');
+  if (!name || !date) { msg.style.color = '#f87171'; msg.textContent = '⚠️ Event name and date are required'; return; }
+  const token = localStorage.getItem('token');
+  if (!token) { msg.style.color = '#f87171'; msg.textContent = '⚠️ Please login first'; return; }
+  msg.style.color = 'var(--txt3)'; msg.textContent = '⏳ Creating event...';
+  try {
+    const res  = await fetch(`${API}/events`, { method:'POST', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`}, body: JSON.stringify({name,category,date,description:desc,isPublic,location}) });
+    const data = await res.json();
+    if (res.ok && data._id) {
+      msg.style.color = 'var(--green)'; msg.textContent = '✅ Event created!';
+      addNotification(`📅 New event "${name}" created`);
+      allEvents.unshift(data);
+      setTimeout(() => { closeCreateEvent(); navigateTo('events'); loadAllEvents(); }, 1200);
+    } else {
+      msg.style.color = '#f87171'; msg.textContent = '❌ ' + (data.message || 'Failed to create event');
+    }
   } catch {
-    const demoEv={_id:'new-'+Date.now(),name,category,date,description:desc,isPublic,mediaCount:0};
+    const demoEv = { _id:'new-'+Date.now(), name, category, date, description:desc, isPublic, mediaCount:0 };
     allEvents.unshift(demoEv);
-    msg.style.color='var(--green)'; msg.textContent='✅ Event created (demo)!';
+    msg.style.color = 'var(--green)'; msg.textContent = '✅ Event created (demo)!';
     addNotification(`📅 New event "${name}" created`);
-    setTimeout(()=>{ closeCreateEvent(); navigateTo('events'); },1200);
+    setTimeout(() => { closeCreateEvent(); navigateTo('events'); }, 1200);
   }
 }
-document.getElementById('create-event-modal').addEventListener('click',function(e){ if(e.target===this) closeCreateEvent(); });
+document.getElementById('create-event-modal').addEventListener('click', function(e) { if (e.target === this) closeCreateEvent(); });
 
 /* ════════════════════════════════
    UPLOAD
 ════════════════════════════════ */
 let uploadEventsList = [];
 
-async function loadUploadEvents(){
-  try{
-    const res = await fetch(`${API}/events`);
+async function loadUploadEvents() {
+  try {
+    const res  = await fetch(`${API}/events`);
     const data = await res.json();
-
     uploadEventsList = data.events || [];
     renderUploadEventOptions(uploadEventsList);
-
-  } catch(e){
+  } catch {
     showToast('Events load nahi ho paaye', 'error');
   }
 }
 
-function renderUploadEventOptions(events){
+function renderUploadEventOptions(events) {
   const select = document.getElementById('upload-event-select');
-  if(!select) return;
-
+  if (!select) return;
   select.innerHTML = '<option value="">-- Select an event --</option>';
-
   events.forEach(ev => {
-    select.innerHTML += `
-      <option value="${ev._id}">
-        ${ev.name}
-      </option>
-    `;
+    select.innerHTML += `<option value="${ev._id}">${ev.name}</option>`;
   });
 }
 
-function filterUploadEvents(){
-  const search = document.getElementById('upload-event-search').value.toLowerCase();
-
+function filterUploadEvents() {
+  const search   = document.getElementById('upload-event-search').value.toLowerCase();
   const filtered = uploadEventsList.filter(ev =>
-    ev.name.toLowerCase().includes(search) ||
-    (ev.category || '').toLowerCase().includes(search)
+    ev.name.toLowerCase().includes(search) || (ev.category || '').toLowerCase().includes(search)
   );
-
   renderUploadEventOptions(filtered);
 }
-document.getElementById('file-input-upload').addEventListener('change',function(){
-  const wrap=document.getElementById('preview-wrap'); wrap.innerHTML='';
-  [...this.files].forEach(f=>{ const r=new FileReader(); r.onload=e=>{ const d=document.createElement('div'); d.className='preview-item'; d.innerHTML=`<img src="${e.target.result}" alt="preview">`; wrap.appendChild(d); }; r.readAsDataURL(f); });
+
+document.getElementById('file-input-upload').addEventListener('change', function() {
+  const wrap = document.getElementById('preview-wrap');
+  wrap.innerHTML = '';
+  [...this.files].forEach(f => {
+    const r = new FileReader();
+    r.onload = e => {
+      const d = document.createElement('div');
+      d.className = 'preview-item';
+      d.innerHTML = `<img src="${e.target.result}" alt="preview">`;
+      wrap.appendChild(d);
+    };
+    r.readAsDataURL(f);
+  });
 });
 
-const ua=document.getElementById('upload-area');
-ua.addEventListener('dragover',e=>{ e.preventDefault(); ua.classList.add('drag-over'); });
-ua.addEventListener('dragleave',()=>ua.classList.remove('drag-over'));
-ua.addEventListener('drop',e=>{ e.preventDefault(); ua.classList.remove('drag-over'); document.getElementById('file-input-upload').files=e.dataTransfer.files; document.getElementById('file-input-upload').dispatchEvent(new Event('change')); });
-async function doUpload(){
-  const token = localStorage.getItem('token');
-  const status = document.getElementById('upload-status');
+const ua = document.getElementById('upload-area');
+ua.addEventListener('dragover',  e => { e.preventDefault(); ua.classList.add('drag-over'); });
+ua.addEventListener('dragleave', () => ua.classList.remove('drag-over'));
+ua.addEventListener('drop', e => {
+  e.preventDefault(); ua.classList.remove('drag-over');
+  document.getElementById('file-input-upload').files = e.dataTransfer.files;
+  document.getElementById('file-input-upload').dispatchEvent(new Event('change'));
+});
 
-  if(!token){
-    showToast('Please login first','error');
-    return;
-  }
-
-  const input = document.getElementById('file-input-upload');
-
-  if(!input.files.length){
-    showToast('⚠️ Select files first','error');
-    return;
-  }
-
+async function doUpload() {
+  const token   = localStorage.getItem('token');
+  const status  = document.getElementById('upload-status');
+  if (!token) { showToast('Please login first', 'error'); return; }
+  const input   = document.getElementById('file-input-upload');
+  if (!input.files.length) { showToast('⚠️ Select files first', 'error'); return; }
   const selectedEventId = document.getElementById('upload-event-select').value;
-
-  if(!selectedEventId){
-    showToast('⚠️ Pehle event select karo','error');
-    return;
-  }
-
-  status.className = 'upload-status loading';
+  if (!selectedEventId) { showToast('⚠️ Pehle event select karo', 'error'); return; }
+  status.className   = 'upload-status loading';
   status.textContent = '⏳ Uploading...';
-
   const fd = new FormData();
   [...input.files].forEach(f => fd.append('media', f));
-
-  const res = await fetch(`${API}/media/upload/${selectedEventId}`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${token}` },
-    body: fd
-  });
-
+  const res  = await fetch(`${API}/media/upload/${selectedEventId}`, { method:'POST', headers:{ Authorization:`Bearer ${token}` }, body: fd });
   const data = await res.json();
-
-  status.className = 'upload-status success';
-  status.textContent = `✅ Uploaded successfully`;
+  status.className   = 'upload-status success';
+  status.textContent = '✅ Uploaded successfully';
 }
 
 /* ════════════════════════════════
    LOGOUT
 ════════════════════════════════ */
-function logoutUser(){
-  localStorage.removeItem('token'); localStorage.removeItem('user');
-  localStorage.removeItem('fv_likes'); localStorage.removeItem('fv_favorites');
-  window.location.href='login-register.html';
+function logoutUser() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  localStorage.removeItem('fv_likes');
+  localStorage.removeItem('fv_favorites');
+  window.location.href = 'login-register.html';
 }
 
 /* ════════════════════════════════
-   RESTORE SESSION
+   RESTORE SESSION + ROLE APPLY
 ════════════════════════════════ */
-const token=localStorage.getItem('token');
-if(token){
-  fetch(`${API}/auth/me`,{headers:{Authorization:`Bearer ${token}`}})
-    .then(r=>r.json())
-    .then(user=>{
-      if(user.name){
-        currentUserId=user._id;
-              // Socket register karo
-      if(typeof socket !== 'undefined'){
-        socket.emit('register', currentUserId);
+const token = localStorage.getItem('token');
+if (token) {
+  fetch(`${API}/auth/me`, { headers:{ Authorization:`Bearer ${token}` } })
+    .then(r => r.json())
+    .then(user => {
+      if (user.name) {
+        currentUserId = user._id;
+        if (typeof socket !== 'undefined') socket.emit('register', currentUserId);
+        const initials = user.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+        document.getElementById('user-avatar').textContent = initials;
+        document.getElementById('user-name').textContent   = user.name;
+        /* ✅ FEATURE 2: Apply role permissions from real API data */
+        applyRolePermissions(user.role);
       }
-        const initials=user.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-        document.getElementById('user-avatar').textContent=initials;
-        document.getElementById('user-name').textContent=user.name;
-        document.getElementById('user-role').textContent=user.role||'Member';
-      }
-    }).catch(()=>{});
+    }).catch(() => {
+      /* If /me fails, apply default viewer permissions */
+      applyRolePermissions('viewer');
+    });
 }
 
 /* ════════════════════════════════
    SOCKET.IO
 ════════════════════════════════ */
-try{
-  const script=document.createElement('script');
-  script.src='https://cdn.socket.io/4.7.5/socket.io.min.js';
-  script.onload=()=>{
-    try{
-      const socket=io('https://event-and-media-management-paltform1.onrender.com');
-
-// ← YEH ADD KARO — User ka room register karo
-if(currentUserId){
-        socket.emit('register', currentUserId);
-           }
-
-// Session restore hone ke baad bhi register karo
-           socket.on('connect', ()=>{
-             if(currentUserId) socket.emit('register', currentUserId);
-               });
-
-        socket.on('notification', n => {
-              addNotification(n.message || 'New notification');
-            });
-      /* Real-time comment notification */
-      socket.on('new-comment',data=>{
-        if(data.mediaId && data.mediaId!==currentMediaId){
-          addNotification(`💬 New comment: "${data.text?.slice(0,30)}..."`);
-        } else if(data.mediaId===currentMediaId){
-          /* Refresh comment list if modal is open */
+try {
+  const script = document.createElement('script');
+  script.src   = 'https://cdn.socket.io/4.7.5/socket.io.min.js';
+  script.onload = () => {
+    try {
+      const socket = io('https://event-and-media-management-paltform1.onrender.com');
+      if (currentUserId) socket.emit('register', currentUserId);
+      socket.on('connect', () => { if (currentUserId) socket.emit('register', currentUserId); });
+      socket.on('notification', n => { addNotification(n.message || 'New notification'); });
+      socket.on('new-comment', data => {
+        if (data.mediaId && data.mediaId !== currentMediaId) {
+          addNotification(`💬 New comment: "${(data.text||'').slice(0, 30)}..."`);
+        } else if (data.mediaId === currentMediaId) {
           loadComments(currentMediaId);
         }
       });
-    } catch{}
+    } catch {}
   };
   document.head.appendChild(script);
-} catch{}
+} catch {}
 
 /* ════════════════════════════════
    INIT
@@ -1303,7 +1398,7 @@ if(currentUserId){
 renderNotifBadge();
 renderNotifPanel();
 loadDashboardEvents();
-document.getElementById('ev-date').value=new Date().toISOString().split('T')[0];
+document.getElementById('ev-date').value = new Date().toISOString().split('T')[0];
 </script>
 </body>
 </html>
