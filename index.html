@@ -181,7 +181,13 @@
      <div style="max-width:600px;margin:0 auto 20px;">
     <label style="font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;">Select Event</label>
     <select id="upload-event-select" style="width:100%;padding:10px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--txt);font-size:13px;outline:none;">
-      <option value="">-- Select an event --</option>
+      <input 
+      type="text" 
+      id="upload-event-search" 
+           placeholder="Search event..."
+           style="width:100%;padding:10px 14px;margin-bottom:8px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--txt);font-size:13px;outline:none;"
+          oninput="filterUploadEvents()"
+      >
     </select>
       </div>
       <div class="upload-area" id="upload-area" onclick="document.getElementById('file-input-upload').click()">
@@ -399,6 +405,7 @@ function navigateTo(page, data){
   else if(page==='gallery') loadGallery();
   else if(page==='myphotos') loadMyPhotos();
   else if(page==='analytics') loadAnalytics();
+  else if(page==='upload') loadUploadEvents();
   else if(page==='event-detail' && data) loadEventDetail(data);
   else if(page==='notifications') renderNotifPage();
 }
@@ -1132,19 +1139,46 @@ document.getElementById('create-event-modal').addEventListener('click',function(
 /* ════════════════════════════════
    UPLOAD
 ════════════════════════════════ */
+let uploadEventsList = [];
+
 async function loadUploadEvents(){
   try{
     const res = await fetch(`${API}/events`);
     const data = await res.json();
-    const select = document.getElementById('upload-event-select');
-    if(!select) return;
-    select.innerHTML = '<option value="">-- Select an event --</option>';
-    (data.events||[]).forEach(ev => {
-      select.innerHTML += `<option value="${ev._id}">${ev.name}</option>`;
-    });
-  } catch{}
+
+    uploadEventsList = data.events || [];
+    renderUploadEventOptions(uploadEventsList);
+
+  } catch(e){
+    showToast('Events load nahi ho paaye', 'error');
+  }
 }
 
+function renderUploadEventOptions(events){
+  const select = document.getElementById('upload-event-select');
+  if(!select) return;
+
+  select.innerHTML = '<option value="">-- Select an event --</option>';
+
+  events.forEach(ev => {
+    select.innerHTML += `
+      <option value="${ev._id}">
+        ${ev.name}
+      </option>
+    `;
+  });
+}
+
+function filterUploadEvents(){
+  const search = document.getElementById('upload-event-search').value.toLowerCase();
+
+  const filtered = uploadEventsList.filter(ev =>
+    ev.name.toLowerCase().includes(search) ||
+    (ev.category || '').toLowerCase().includes(search)
+  );
+
+  renderUploadEventOptions(filtered);
+}
 document.getElementById('file-input-upload').addEventListener('change',function(){
   const wrap=document.getElementById('preview-wrap'); wrap.innerHTML='';
   [...this.files].forEach(f=>{ const r=new FileReader(); r.onload=e=>{ const d=document.createElement('div'); d.className='preview-item'; d.innerHTML=`<img src="${e.target.result}" alt="preview">`; wrap.appendChild(d); }; r.readAsDataURL(f); });
@@ -1163,7 +1197,7 @@ async function doUpload(){
   if(!input.files.length){ showToast('⚠️ Select files first','error'); return; }
 
   // ← Selected event ID lo
-  const selectedEventId = document.getElementById('upload-event-select')?.value;
+  fetch(`${API}/media/upload/${selectedEventId}`)
   if(!selectedEventId){ showToast('⚠️ Pehle event select karo','error'); return; }
 
   status.className='upload-status loading'; status.textContent='⏳ Uploading...';
