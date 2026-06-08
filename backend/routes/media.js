@@ -10,6 +10,7 @@ const { auth, optionalAuth } = require('../middleware/auth');
 const { upload }             = require('../middleware/upload');
 const { generateAITags, generateWatermark } = require('../utils/aiUtils');
 
+
 // Helper: extract Cloudinary public_id from a secure URL
 function extractPublicId(url) {
   // e.g. https://res.cloudinary.com/<cloud>/image/upload/v123/event-media/abc/filename.jpg
@@ -44,22 +45,33 @@ router.get('/user/my-photos', auth, async (req, res) => {
 });
 
 // GET /api/media/event/:eventId
+
+
+// GET /api/media/event/:eventId
+// OLD: router.get('/event/:eventId', async (req, res) => { ... })
+// NEW: optionalAuth lagao taaki private check ho sake
 router.get('/event/:eventId', optionalAuth, async (req, res) => {
   try {
-    const { page = 1, limit = 20, type } = req.query;
-    const query = { event: req.params.eventId, status: 'active' };
-    if (type) query.type = type;
+    const event = await Event.findById(req.params.eventId);
+    if (!event) return res.status(404).json({ message: 'Event not found' });
 
-    const [media, total] = await Promise.all([
-      Media.find(query)
-        .populate('uploadedBy', 'name avatar')
-        .populate('comments.user', 'name avatar')
-        .sort({ createdAt: -1 })
-        .skip((page - 1) * limit)
-        .limit(Number(limit)),
-      Media.countDocuments(query),
-    ]);
-    res.json({ media, total, pages: Math.ceil(total / limit) });
+    // ✅ Private event — login required
+    if (!event.isPublic) {
+      if (!req.user) {
+        return res.status(401).json({ message: 'Login required to view private event media' });
+      }
+      const isAdmin   = req.user.role === 'admin';
+      const isCreator = String(event.createdBy) === String(req.user._id);
+      if (!isAdmin && !isCreator) {
+        return res.status(403).json({ message: 'You do not have access to this private event' });
+      }
+    }
+
+    const media = await Media.find({ event: req.params.eventId })
+      .populate('uploadedBy', 'name _id')
+      .sort({ createdAt: -1 });
+
+    res.json({ media });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
