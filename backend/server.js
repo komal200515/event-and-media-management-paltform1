@@ -42,6 +42,7 @@ app.use('/uploads', express.static('uploads'));
 
 // Rate Limiting
 app.use('/api/', rateLimit({ windowMs: 15 * 60 * 1000, max: 200 }));
+validate: { xForwardedForHeader: false }  
 
 // Socket.IO
 const onlineUsers = new Map();
