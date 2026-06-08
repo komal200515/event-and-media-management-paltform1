@@ -32,49 +32,29 @@ async function notify(req, type, recipientId, message, mediaId, eventId) {
 }
 
 // LIKE
-// POST /api/social/like/:mediaId
-router.post('/like/:mediaId', auth, async (req, res) => {
+router.post("/like/:mediaId", auth, async (req, res) => {
   try {
-    const media = await Media.findById(req.params.mediaId)
-      .populate('uploadedBy', '_id name');
-    if (!media) return res.status(404).json({ message: 'Media not found' });
+    const media = await Media.findById(req.params.mediaId);
+    if (!media) return res.status(404).json({ message: "Media not found" });
 
-    const userId  = String(req.user._id);
-    const likeIdx = media.likes.findIndex(id => String(id) === userId);
-    let liked;
+    const liked = media.likes.includes(req.user._id);
 
-    if (likeIdx === -1) {
-      media.likes.push(userId);
-      liked = true;
-    } else {
-      media.likes.splice(likeIdx, 1);
-      liked = false;
-    }
-    await media.save();
     if (liked) {
-  await notify(
-    req,
-    "like",
-    media.uploadedBy._id,
-    `${req.user.name} liked your photo`,
-    media._id,
-    media.event
-  );
-}
-
-    // ✅ NEW: notify photo owner via Socket.IO
-    if (liked && String(media.uploadedBy._id) !== userId) {
-      const io = req.app.get('io');
-      if (io) {
-        io.to(`user_${media.uploadedBy._id}`).emit('photo_liked', {
-          likedBy: req.user.name,
-          mediaId: media._id,
-          userId:  req.user._id
-        });
-      }
+      media.likes.pull(req.user._id);
+    } else {
+      media.likes.push(req.user._id);
+      await notify(
+        req,
+        "like",
+        media.uploadedBy,
+        `${req.user.name} liked your photo`,
+        media._id,
+        media.event
+      );
     }
 
-    res.json({ liked, likes: media.likes.length });
+    await media.save();
+    res.json({ liked: !liked, count: media.likes.length });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -97,79 +77,36 @@ router.get("/comments/:mediaId", async (req, res) => {
 });
 
 // POST COMMENT
-// POST /api/social/comment/:mediaId
-router.post('/comment/:mediaId', auth, async (req, res) => {
+router.post("/comment/:mediaId", auth, async (req, res) => {
   try {
-    const { text, mentions = [] } = req.body; // ✅ mentions array from frontend
-    if (!text?.trim()) return res.status(400).json({ message: 'Comment text required' });
+    const { text } = req.body;
 
-    const media = await Media.findById(req.params.mediaId)
-      .populate('uploadedBy', '_id name');
-    if (!media) return res.status(404).json({ message: 'Media not found' });
-
-    // add comment (adjust to match your existing schema)
-    const comment = {
-      user:      req.user._id,
-      text:      text.trim(),
-      createdAt: new Date()
-    };
-    media.comments = media.comments || [];
-    media.comments.push(comment);
-    await media.save();
-    await notify(
-  req,
-  "comment",
-  media.uploadedBy._id,
-  `${req.user.name} commented on your photo`,
-  media._id,
-  media.event
-);
-
-    const io      = req.app.get('io');
-    const ownerId = String(media.uploadedBy._id);
-    const selfId  = String(req.user._id);
-
-    if (io) {
-      // ✅ Notify photo owner
-      if (ownerId !== selfId) {
-        io.to(`user_${ownerId}`).emit('photo_commented', {
-          commentedBy: req.user.name,
-          text:        text.slice(0, 60),
-          mediaId:     media._id
-        });
-      }
-
-      // ✅ Notify @mentioned users
-      if (mentions.length > 0) {
-        const User = require('../models/User');
-        const mentionedUsers = await User.find({
-          name: { $in: mentions.map(m => new RegExp(`^${m.trim()}$`, 'i')) }
-        }).select('_id name');
-
-        for (const mu of mentionedUsers) {
-          if (String(mu._id) !== selfId) {
-            io.to(`user_${mu._id}`).emit('mentioned', {
-              mentionedBy: req.user.name,
-              text:        text.slice(0, 60),
-              mediaId:     media._id
-            });
-          }
-        }
-      }
-
-      // Broadcast to all (for open comment modals)
-      io.emit('new-comment', {
-        mediaId: media._id,
-        text,
-        userId:  req.user._id,
-        user:    { name: req.user.name, _id: req.user._id }
-      });
+    if (!text || !text.trim()) {
+      return res.status(400).json({ message: "Text required" });
     }
 
-    res.json({
-      message: 'Comment posted',
-      comment: { ...comment, user: { name: req.user.name, _id: req.user._id } }
+    const media = await Media.findById(req.params.mediaId);
+    if (!media) return res.status(404).json({ message: "Media not found" });
+
+    media.comments.push({
+      user: req.user._id,
+      text: text.trim()
     });
+
+    await media.save();
+
+    await notify(
+      req,
+      "comment",
+      media.uploadedBy,
+      `${req.user.name} commented on your photo`,
+      media._id,
+      media.event
+    );
+
+    const newComment = media.comments[media.comments.length - 1];
+
+    res.json(newComment);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

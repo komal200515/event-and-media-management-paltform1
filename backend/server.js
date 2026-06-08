@@ -46,24 +46,18 @@ app.use('/api/', rateLimit({ windowMs: 15 * 60 * 1000, max: 200 }));
 // Socket.IO
 const onlineUsers = new Map();
 
-// ✅ Make io accessible in all route files
-app.set('io', io);
-
-// ✅ Socket.IO room system
 io.on('connection', (socket) => {
-  console.log('Client connected:', socket.id);
+  console.log('🔌 Client connected:', socket.id);
 
-  // Frontend sends: socket.emit('register', userId)
-  // Har user apne personal room me join karta hai
   socket.on('register', (userId) => {
-    if (userId) {
-      socket.join(`user_${userId}`);
-      console.log(`✅ User ${userId} joined room user_${userId}`);
-    }
+    onlineUsers.set(userId, socket.id);
+    socket.userId = userId;
+    console.log('👤 User registered:', userId);
   });
 
   socket.on('disconnect', () => {
-    console.log('Client disconnected:', socket.id);
+    if (socket.userId) onlineUsers.delete(socket.userId);
+    console.log('❌ Client disconnected:', socket.id);
   });
 });
 

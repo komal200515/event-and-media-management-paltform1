@@ -74,14 +74,5 @@ router.put('/upload-selfie', auth, async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
-// GET /api/auth/users — @mention dropdown ke liye
-// Returns only name + _id, koi sensitive data nahi
-router.get('/users', auth, async (req, res) => {
-  try {
-    const users = await User.find({}, 'name _id role').limit(200).sort({ name: 1 });
-    res.json({ users });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
+
 module.exports = router;

@@ -1,88 +1,38 @@
-const router = require('express').Router();
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+const jwt  = require('jsonwebtoken');
 const User = require('../models/User');
-const { auth } = require('../middleware/auth');
 
-// ================= REGISTER =================
-router.post('/register', async (req, res) => {
+// Protect routes — must be logged in
+const auth = async (req, res, next) => {
   try {
-    const { name, email, password, role } = req.body;
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ message: 'No token' });
 
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: 'User already exists' });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const user = await User.create({
-      name,
-      email,
-      password: hashedPassword,
-      role
-    });
-
-    res.status(201).json({
-      message: 'User registered successfully'
-    });
-
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = await User.findById(decoded.userId).select('-password -faceDescriptor');
+    if (!req.user) return res.status(401).json({ message: 'User not found' });
+    next();
+  } catch {
+    res.status(401).json({ message: 'Invalid token' });
   }
-});
+};
 
-// ================= LOGIN =================
-router.post('/login', async (req, res) => {
+// Optional auth — attach user if token exists, don't block if not
+const optionalAuth = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
-
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ message: 'User not found' });
+    const token = req.headers.authorization?.split(' ')[1];
+    if (token) {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      req.user = await User.findById(decoded.userId).select('-password');
     }
+  } catch {}
+  next();
+};
 
-    const match = await bcrypt.compare(password, user.password);
-    if (!match) {
-      return res.status(400).json({ message: 'Invalid password' });
-    }
+// Role guard — call after auth
+const requireRole = (...roles) => (req, res, next) => {
+  if (!roles.includes(req.user?.role))
+    return res.status(403).json({ message: 'Forbidden' });
+  next();
+};
 
-    const token = jwt.sign(
-      {
-        userId: user._id
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-
-    res.json({
-      token,
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role
-      }
-    });
-
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-// ================= USERS LIST =================
-// Needed for @mention dropdown
-router.get('/users', auth, async (req, res) => {
-  try {
-    const users = await User.find({}, 'name _id role')
-      .limit(200)
-      .sort({ name: 1 });
-
-    res.json({ users });
-
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-module.exports = router;
+module.exports = { auth, optionalAuth, requireRole };
