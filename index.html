@@ -833,7 +833,7 @@ async function postComment() {
         showToast('Comment posted!');
         // local notification for mentions
         if (mentions.length) {
-          addNotification(`🏷️ Tumne comment mein tag kiya: ${mentions.map(m=>'@'+m).join(', ')}`);
+          addNotification(`🏷️ Tag : ${mentions.map(m=>'@'+m).join(', ')}`);
         }
       }
     } else {
