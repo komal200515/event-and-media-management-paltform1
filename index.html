@@ -1400,7 +1400,7 @@ async function doUpload() {
   const data = await res.json();
   if (res.ok) {
     status.className='upload-status success'; status.textContent='✅ Uploaded successfully';
-    addNotification('📤 Photos upload ho gaye with AI tags!', 'event_upload');
+    addNotification('📤 Photos uploaded with AI tags!', 'event_upload');
   } else {
     status.className='upload-status error'; status.textContent='❌ '+(data.message||'Upload failed');
   }
