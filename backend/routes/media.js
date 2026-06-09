@@ -98,23 +98,16 @@ router.post('/upload/:eventId', auth, upload.array('media', 50), async (req, res
         let width, height;
 
         // Process image metadata & thumbnail BEFORE uploading to Cloudinary
-        if (!isVideo) {
-          const meta = await sharp(file.path).metadata();
-          width  = meta.width;
-          height = meta.height;
+if (!isVideo) {
+const meta = await sharp(file.buffer).metadata();
+width  = meta.width;
+height = meta.height;
+aiTags = await generateAITags(file.buffer);
+}
 
-          const thumbName = `thumb_${file.filename}`;
-          const thumbPath = path.join(path.dirname(file.path), thumbName);
-          await sharp(file.path)
-            .resize(400, 300, { fit: 'cover' })
-            .jpeg({ quality: 80 })
-            .toFile(thumbPath);
-          thumbnailUrl = `/uploads/${req.params.eventId}/${thumbName}`;
 
-          aiTags = await generateAITags(file.path);
-        }
-
-        const cloudResult = await cloudinary.uploader.upload(file.path, {
+       const cloudResult = await cloudinary.uploader.upload(
+  `data:${file.mimetype};base64,${file.buffer.toString('base64')}`, {
           folder: `event-media/${req.params.eventId}`,
           resource_type: isVideo ? 'video' : 'image',
         });
@@ -123,9 +116,6 @@ router.post('/upload/:eventId', auth, upload.array('media', 50), async (req, res
         // FIX 3: Delete the temp file from disk
         //         after a successful Cloudinary upload.
         // ─────────────────────────────────────────
-        fs.unlink(file.path, (unlinkErr) => {
-          if (unlinkErr) console.warn(`Could not delete temp file ${file.path}:`, unlinkErr.message);
-        });
 
         const doc = await Media.create({
           event:        req.params.eventId,
@@ -133,7 +123,7 @@ router.post('/upload/:eventId', auth, upload.array('media', 50), async (req, res
           type:         isVideo ? 'video' : 'photo',
           url:          cloudResult.secure_url,
           cloudinaryPublicId: cloudResult.public_id, // store for later deletion
-          thumbnailUrl: thumbnailUrl || cloudResult.secure_url,
+          thumbnailUrl: cloudResult.secure_url,
           fileName:     file.originalname,
           fileSize:     file.size,
           mimeType:     file.mimetype,
