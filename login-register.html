@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EventMedia Auth</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<!-- EmailJS CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 <style>
 *{ margin:0; padding:0; box-sizing:border-box; font-family:Poppins,sans-serif; }
 
@@ -54,6 +56,15 @@ button.btn-main:hover{ background:#16a34a; box-shadow:0 4px 14px rgba(34,197,94,
 button.btn-main:active{ transform:scale(.98); }
 button.btn-main:disabled{ background:#86efac; cursor:not-allowed; }
 
+button.btn-secondary{
+  width:100%; padding:10px; background:transparent; color:#22c55e;
+  border:1.5px solid #22c55e; border-radius:9px; cursor:pointer;
+  font-size:13px; font-weight:600; font-family:Poppins,sans-serif; margin-top:8px;
+  transition:all .2s;
+}
+button.btn-secondary:hover{ background:#f0fdf4; }
+button.btn-secondary:disabled{ color:#86efac; border-color:#86efac; cursor:not-allowed; }
+
 p{ text-align:center; margin-top:14px; font-size:13px; color:#666; }
 a{ color:#22c55e; cursor:pointer; font-weight:500; }
 a:hover{ text-decoration:underline; }
@@ -67,6 +78,15 @@ a:hover{ text-decoration:underline; }
 .alert-success{ background:#f0fdf4; border:1px solid #bbf7d0; color:#16a34a; }
 
 #code-field{ display:none; }
+
+/* OTP input styling */
+.otp-info{
+  text-align:center; font-size:13px; color:#666;
+  margin-bottom:16px; line-height:1.6;
+}
+.otp-info strong{ color:#111; }
+#otp-timer{ font-size:12px; text-align:center; color:#888; margin-top:6px; }
+#otp-timer span{ color:#ef4444; font-weight:600; }
 </style>
 </head>
 <body>
@@ -76,7 +96,7 @@ a:hover{ text-decoration:underline; }
 
   <div id="alertBox" class="alert-box"></div>
 
-  <!-- REGISTER FORM -->
+  <!-- ══ REGISTER FORM ══ -->
   <div id="registerForm">
     <h2>Create Account</h2>
     <div class="form-group">
@@ -109,11 +129,32 @@ a:hover{ text-decoration:underline; }
       <input type="password" id="invite-code" placeholder="Enter your invite code">
       <div class="error-msg" id="err-code">Invalid invite code</div>
     </div>
-    <button class="btn-main" onclick="doRegister()" id="reg-btn">Register</button>
+    <button class="btn-main" onclick="sendOTP()" id="send-otp-btn">Send OTP & Verify Email</button>
     <p>Already have an account? <a onclick="showLogin()">Login</a></p>
   </div>
 
-  <!-- LOGIN FORM -->
+  <!-- ══ OTP VERIFICATION FORM ══ -->
+  <div id="otpForm" style="display:none;">
+    <h2>Verify Your Email</h2>
+    <div class="otp-info">
+      OTP sent to <strong id="otp-email-display"></strong><br>
+      Enter the 6-digit code below
+    </div>
+    <div class="form-group">
+      <label>Enter OTP</label>
+      <input type="text" id="otpInput" placeholder="e.g. 483921"
+             maxlength="6" inputmode="numeric" pattern="[0-9]*"
+             oninput="this.value=this.value.replace(/\D/g,'')"
+             onkeydown="if(event.key==='Enter')verifyOTP()">
+      <div class="error-msg" id="err-otp">Incorrect OTP. Please try again.</div>
+    </div>
+    <div id="otp-timer">Code expires in: <span id="countdown">10:00</span></div>
+    <button class="btn-main" onclick="verifyOTP()" id="verify-btn" style="margin-top:14px;">Verify & Create Account</button>
+    <button class="btn-secondary" onclick="resendOTP()" id="resend-btn" disabled>Resend OTP</button>
+    <p><a onclick="showRegister()">← Back to Register</a></p>
+  </div>
+
+  <!-- ══ LOGIN FORM ══ -->
   <div id="loginForm" style="display:none;">
     <h2>Welcome Back</h2>
     <div class="form-group">
@@ -132,10 +173,52 @@ a:hover{ text-decoration:underline; }
 </div>
 
 <script>
+/* ══ CONFIG — YAHAN APNI VALUES DAALO ══ */
+const EMAILJS_PUBLIC_KEY  = "RuNdoEKAEtA-1lfFK";       // EmailJS → Account → API Keys
+const EMAILJS_SERVICE_ID  = "service_6jwy85a";       // EmailJS → Email Services
+const EMAILJS_TEMPLATE_ID = "template_1ed2vae";      // EmailJS → Email Templates
+
 const API = "https://event-and-media-management-paltform1.onrender.com/api";
 const INVITE_CODES = { club_member:'CLUB2025', photographer:'PHOTO2025', admin:'ADMIN2025' };
 
+/* EmailJS initialize */
+emailjs.init(EMAILJS_PUBLIC_KEY);
+
 if (localStorage.getItem('token')) window.location.href = 'index.html';
+
+/* ── OTP State ── */
+let generatedOTP  = null;
+let otpExpiry     = null;
+let countdownTimer = null;
+let resendTimer   = null;
+let pendingUserData = null;
+
+/* ── Generate 6-digit OTP ── */
+function generateOTP() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+/* ── Countdown Timer ── */
+function startCountdown(seconds = 600) {
+  clearInterval(countdownTimer);
+  const resendBtn = document.getElementById('resend-btn');
+  resendBtn.disabled = true;
+
+  // Resend enable after 60 seconds
+  setTimeout(() => { resendBtn.disabled = false; }, 60000);
+
+  countdownTimer = setInterval(() => {
+    seconds--;
+    const m = Math.floor(seconds / 60).toString().padStart(2,'0');
+    const s = (seconds % 60).toString().padStart(2,'0');
+    document.getElementById('countdown').textContent = `${m}:${s}`;
+    if (seconds <= 0) {
+      clearInterval(countdownTimer);
+      document.getElementById('countdown').textContent = 'Expired';
+      generatedOTP = null;
+    }
+  }, 1000);
+}
 
 /* ── EMAIL VALIDATION ── */
 function isValidEmail(email) {
@@ -212,26 +295,28 @@ function handleRoleChange() {
 
 function showLogin() {
   document.getElementById('registerForm').style.display = 'none';
+  document.getElementById('otpForm').style.display      = 'none';
   document.getElementById('loginForm').style.display    = 'block';
   document.getElementById('alertBox').classList.remove('show');
+  clearInterval(countdownTimer);
 }
 
 function showRegister() {
   document.getElementById('registerForm').style.display = 'block';
+  document.getElementById('otpForm').style.display      = 'none';
   document.getElementById('loginForm').style.display    = 'none';
   document.getElementById('alertBox').classList.remove('show');
+  clearInterval(countdownTimer);
 }
 
-/* ══════════════════════════════════════════
-   REGISTER — Direct (no OTP)
-══════════════════════════════════════════ */
-async function doRegister() {
+/* ══ STEP 1: Validate form & Send OTP ══ */
+async function sendOTP() {
   const name     = document.getElementById('name').value.trim();
   const email    = document.getElementById('regEmail').value.trim();
   const password = document.getElementById('regPassword').value;
   const role     = document.getElementById('role').value;
   const code     = document.getElementById('invite-code').value.trim();
-  let   hasError = false;
+  let hasError   = false;
 
   if (name.length < 2) {
     document.getElementById('name').classList.add('input-error');
@@ -265,7 +350,73 @@ async function doRegister() {
   }
   if (hasError) return;
 
-  setBtn('reg-btn', true, '⏳ Registering...');
+  setBtn('send-otp-btn', true, '⏳ Sending OTP...');
+
+  /* Generate & store OTP */
+  generatedOTP  = generateOTP();
+  otpExpiry     = Date.now() + 10 * 60 * 1000; // 10 minutes
+  pendingUserData = { name, email, password, role };
+
+  try {
+    /* Send via EmailJS */
+    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+      to_email: email,
+      to_name:  name,
+      otp:      generatedOTP,
+    });
+
+    /* Show OTP form */
+    document.getElementById('registerForm').style.display = 'none';
+    document.getElementById('otpForm').style.display      = 'block';
+    document.getElementById('otp-email-display').textContent = email;
+    document.getElementById('otpInput').value = '';
+    clearErr('otp');
+    startCountdown(600);
+    showAlert(`OTP sent to ${email}`, 'success');
+
+  } catch(err) {
+    console.error('EmailJS error:', err);
+    showAlert('Could not send OTP. Check your EmailJS config.');
+    generatedOTP = null;
+  }
+
+  setBtn('send-otp-btn', false, 'Send OTP & Verify Email');
+}
+
+/* ══ STEP 2: Verify OTP & Register ══ */
+async function verifyOTP() {
+  const enteredOTP = document.getElementById('otpInput').value.trim();
+
+  if (!enteredOTP || enteredOTP.length !== 6) {
+    document.getElementById('otpInput').classList.add('input-error');
+    document.getElementById('err-otp').textContent = 'Please enter the 6-digit OTP';
+    document.getElementById('err-otp').classList.add('show');
+    return;
+  }
+
+  if (!generatedOTP) {
+    showAlert('OTP has expired. Please request a new one.');
+    return;
+  }
+
+  if (Date.now() > otpExpiry) {
+    generatedOTP = null;
+    showAlert('OTP has expired. Please request a new one.');
+    return;
+  }
+
+  if (enteredOTP !== generatedOTP) {
+    document.getElementById('otpInput').classList.add('input-error');
+    document.getElementById('err-otp').textContent = 'Incorrect OTP. Please try again.';
+    document.getElementById('err-otp').classList.add('show');
+    return;
+  }
+
+  /* OTP correct — now register */
+  clearInterval(countdownTimer);
+  setBtn('verify-btn', true, '⏳ Creating Account...');
+
+  const { name, email, password, role } = pendingUserData;
 
   try {
     const res  = await fetch(`${API}/auth/register`, {
@@ -274,7 +425,7 @@ async function doRegister() {
     });
     const data = await res.json();
     if (data.token || res.ok) {
-      showAlert('Registration successful! Please login.', 'success');
+      showAlert('Account created successfully! Please login.', 'success');
       setTimeout(() => showLogin(), 1500);
     } else {
       showAlert(data.message || 'Registration failed. Please try again.');
@@ -282,12 +433,33 @@ async function doRegister() {
   } catch {
     showAlert('Could not connect to server. Check your internet connection.');
   }
-  setBtn('reg-btn', false, 'Register');
+
+  setBtn('verify-btn', false, 'Verify & Create Account');
 }
 
-/* ══════════════════════════════════════════
-   LOGIN — Direct (no OTP)
-══════════════════════════════════════════ */
+/* ══ Resend OTP ══ */
+async function resendOTP() {
+  setBtn('resend-btn', true, '⏳ Resending...');
+  generatedOTP = generateOTP();
+  otpExpiry    = Date.now() + 10 * 60 * 1000;
+
+  try {
+    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+      to_email: pendingUserData.email,
+      to_name:  pendingUserData.name,
+      otp:      generatedOTP,
+    });
+    showAlert('New OTP sent!', 'success');
+    startCountdown(600);
+    clearErr('otp');
+  } catch {
+    showAlert('Could not resend OTP. Please try again.');
+  }
+
+  setBtn('resend-btn', false, 'Resend OTP');
+}
+
+/* ══ LOGIN ══ */
 async function doLogin() {
   const email    = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPassword').value;
