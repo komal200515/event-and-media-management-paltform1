@@ -9,16 +9,17 @@ A centralized platform for clubs and societies to upload, organize, search, and 
 - Event Creation and Management
 - Media Upload System
 - Cloudinary Cloud Storage
-- Media Gallery
+- Media Galler
+- facial recognization
 - AI-based Image Tags
 - Search by Tags
 - Like Button with Counter
 - Comment System
 - Add to Favorites
 - Download Media
+- watermark 
 - Notifications
 - Dashboard Statistics
-- facial recognization
 - MongoDB Database Integration
 ## Tech Stack
 ### Frontend
