@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=1200"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>EventMedia — Dashboard</title>
 <link rel="icon" type="image/png" href="https://thf.bing.com/th?q=Media+and+Event+Logo.png&w=120&h=120&c=1&rs=1&qlt=70&o=7&cb=1&dpr=1.4&pid=InlineBlock&rm=3&mkt=en-IN&cc=IN&setlang=en&adlt=moderate&t=1&mw=247">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
@@ -507,7 +507,7 @@ function applyRolePermissions(role) {
   role = (role || 'viewer').toLowerCase();
   window.currentRole = role;
   const canUpload      = ['admin', 'photographer', 'club_member', 'member'].includes(role);
-  const canCreateEvent = ['admin', 'photographer'].includes(role);
+  const canCreateEvent = ['admin'].includes(role);
   const uploadNav = document.getElementById('nav-upload');
   if (uploadNav) uploadNav.style.display = canUpload ? '' : 'none';
   document.querySelectorAll('#topbar-new-event-btn, #events-new-event-btn').forEach(btn => {
