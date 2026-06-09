@@ -380,6 +380,30 @@ const API       = 'https://event-and-media-management-paltform1.onrender.com/api
 const CLUB_NAME = 'EventMedia Club';
 
 /* ── AUTH GUARD ── */
+  async function loadCurrentUser() {
+  const token = localStorage.getItem("token");
+  if (!token) return;
+
+  try {
+    const res = await fetch(`${API}/auth/me`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    const user = await res.json();
+
+    currentUserId = user._id;
+
+    document.getElementById("user-name").textContent = user.name;
+    document.getElementById("user-avatar").textContent =
+      user.name.charAt(0).toUpperCase();
+
+    applyRolePermissions(user.role);
+  } catch (err) {
+    console.error("User load failed:", err);
+  }
+}
 if (!localStorage.getItem('token')) window.location.href = 'login-register.html';
 
 /* ── STATE ── */
@@ -1460,27 +1484,6 @@ renderNotifPanel();
 loadDashboardEvents();
 document.getElementById('ev-date').value = new Date().toISOString().split('T')[0];
 loadNotificationsFromDB(); // ← MongoDB se notifications load karo
-  async function loadCurrentUser() {
-  const token = localStorage.getItem("token");
-
-  try {
-    const res = await fetch(`${API}/auth/me`, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-
-    const user = await res.json();
-
-    document.getElementById("user-name").textContent = user.name;
-    document.getElementById("user-avatar").textContent =
-      user.name ? user.name.charAt(0).toUpperCase() : "U";
-
-    applyRolePermissions(user.role);
-  } catch (err) {
-    console.log("User load error:", err);
-  }
-}
 
 loadCurrentUser();
 </script>
