@@ -52,9 +52,17 @@ router.get('/:id', optionalAuth, async (req, res) => {
 });
 
 // POST /api/events  (admin, photographer, club_member)
-router.post('/', auth, requireRole('admin'), async (req, res) => {
+router.post('/', auth, requireRole('admin', 'photographer', 'club_member'), async (req, res) => {
   try {
-    const event = await Event.create({ ...req.body, createdBy: req.user._id });
+    const event = await Event.create({
+  name: req.body.name || req.body.eventName,
+  description: req.body.description,
+  category: req.body.category,
+  date: req.body.date,
+  location: req.body.location,
+  isPublic: req.body.isPublic,
+  createdBy: req.user._id
+});
 
     // Generate QR code pointing to event page
     const url = `${process.env.FRONTEND_URL}/events/${event._id}`;
